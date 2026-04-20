@@ -1,0 +1,116 @@
+import { prisma } from "./prisma";
+
+export type RouteStep = {
+  roomId: string;
+  roomNumber: string;
+  isExit: boolean;
+};
+
+export async function computeEvacuationRoute(
+  startRoomId: string,
+  avoidRoomIds: string[] = []
+): Promise<RouteStep[]> {
+  // Fetch everything needed. For a huge hotel, you might cache this graph in Redis.
+  // For ResQRoute, pulling the graph is fast.
+  const rooms = await prisma.room.findMany();
+  const edges = await prisma.edge.findMany({
+    where: { blocked: false }
+  });
+
+  const graph: Record<string, { to: string; weight: number }[]> = {};
+  
+  // Initialize graph nodes
+  rooms.forEach(r => { graph[r.id] = []; });
+  
+  // Populate edges
+  edges.forEach(e => {
+    // avoid edges pointing into hazards
+    if (avoidRoomIds.includes(e.toRoomId)) return;
+    
+    // Graph is bi-directional but Prisma schema stored both directions if it's undirected.
+    // The seed.ts explicitly created (A->B) and (B->A).
+    if (!graph[e.fromRoomId]) graph[e.fromRoomId] = [];
+    graph[e.fromRoomId].push({ to: e.toRoomId, weight: e.weight });
+  });
+
+  // We want to avoid the origin hazard room completely if it's not our start room
+  // (If the guest is IN the hazard room, they obviously have to leave it, so don't delete their start node)
+  if (!avoidRoomIds.includes(startRoomId)) {
+    avoidRoomIds.forEach(hazard => {
+      if(graph[hazard]) delete graph[hazard];
+    });
+  }
+
+  // Dijkstra's algorithm
+  const dist: Record<string, number> = {};
+  const prev: Record<string, string | null> = {};
+  const unvisited = new Set<string>();
+
+  rooms.forEach(r => {
+    dist[r.id] = Infinity;
+    prev[r.id] = null;
+    if (graph[r.id]) unvisited.add(r.id);
+  });
+
+  dist[startRoomId] = 0;
+
+  while (unvisited.size > 0) {
+    // Find node with minimum distance
+    let current: string | null = null;
+    let minDist = Infinity;
+    for (const nodeId of unvisited) {
+      if (dist[nodeId] < minDist) {
+        minDist = dist[nodeId];
+        current = nodeId;
+      }
+    }
+
+    if (current === null || dist[current] === Infinity) {
+      // no path exists
+      break;
+    }
+
+    // If we reached an exit, we can stop evaluating branching paths (optional optimization, but we want the shortest exit)
+    // Actually, let's keep going until we exhaust the graph to find the absolute shortest.
+
+    unvisited.delete(current);
+
+    const neighbors = graph[current] || [];
+    for (const neighbor of neighbors) {
+      if (unvisited.has(neighbor.to)) {
+        const alt = dist[current] + neighbor.weight;
+        if (alt < dist[neighbor.to]) {
+          dist[neighbor.to] = alt;
+          prev[neighbor.to] = current;
+        }
+      }
+    }
+  }
+
+  // Find the closest exit
+  const exitRooms = rooms.filter(r => r.isExit);
+  let bestExit: string | null = null;
+  let exitDist = Infinity;
+
+  for (const exit of exitRooms) {
+    if (dist[exit.id] < exitDist) {
+      exitDist = dist[exit.id];
+      bestExit = exit.id;
+    }
+  }
+
+  // If there's no path to any exit
+  if (!bestExit) return [];
+
+  // Reconstruct path
+  const path: RouteStep[] = [];
+  let step: string | null = bestExit;
+  
+  while (step) {
+    const room = rooms.find(r => r.id === step)!;
+    path.unshift({ roomId: room.id, roomNumber: room.number, isExit: room.isExit });
+    step = prev[step];
+  }
+
+  return path;
+}

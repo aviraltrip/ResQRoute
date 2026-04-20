@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum IncidentType {
+  fire
+  smoke
+  earthquake
+  medical
+  security
+}
+
+enum GuestStatus {
+  checked_in
+  evacuating
+  safe
+  trapped
+}
+
+enum DistressCategory {
+  medical
+  mobility
+  fire_exposure
+  structural
+  panic
+}
+
+model Hotel {
+  id        String     @id @default(cuid())
+  name      String
+  rooms     Room[]
+  incidents Incident[]
+  createdAt DateTime   @default(now())
+}
+
+model Room {
+  id        String            @id @default(cuid())
+  hotelId   String
+  number    String
+  floor     Int
+  x         Float
+  y         Float
+  isExit    Boolean           @default(false)
+  hotel     Hotel             @relation(fields: [hotelId], references: [id])
+  edgesFrom Edge[]            @relation("EdgesFrom")
+  edgesTo   Edge[]            @relation("EdgesTo")
+  guests    Guest[]
+  incidents Incident[]
+  distress  DistressMessage[]
+
+  @@unique([hotelId, number])
+  @@index([hotelId, floor])
+}
+
+model Edge {
+  id         String  @id @default(cuid())
+  fromRoomId String
+  toRoomId   String
+  isExit     Boolean @default(false)
+  blocked    Boolean @default(false)
+  weight     Float   @default(1)
+  fromRoom   Room    @relation("EdgesFrom", fields: [fromRoomId], references: [id])
+  toRoom     Room    @relation("EdgesTo", fields: [toRoomId], references: [id])
+
+  @@unique([fromRoomId, toRoomId])
+  @@index([blocked])
+}
+
+model Guest {
+  id                String            @id @default(cuid())
+  token             String            @unique @default(cuid())
+  name              String
+  phone             String
+  roomId            String
+  accessibilityFlag Boolean           @default(false)
+  status            GuestStatus       @default(checked_in)
+  room              Room              @relation(fields: [roomId], references: [id])
+  distress          DistressMessage[]
+  updatedAt         DateTime          @updatedAt
+
+  @@index([status])
+}
+
+model Incident {
+  id           String            @id @default(cuid())
+  hotelId      String
+  type         IncidentType
+  originRoomId String
+  startedAt    DateTime          @default(now())
+  endedAt      DateTime?
+  isDrill      Boolean           @default(false)
+  hotel        Hotel             @relation(fields: [hotelId], references: [id])
+  originRoom   Room              @relation(fields: [originRoomId], references: [id])
+  distress     DistressMessage[]
+}
+
+model DistressMessage {
+  id         String            @id @default(cuid())
+  incidentId String
+  guestId    String
+  roomId     String
+  text       String
+  severity   Int?
+  category   DistressCategory?
+  summary    String?
+  createdAt  DateTime          @default(now())
+  incident   Incident          @relation(fields: [incidentId], references: [id])
+  guest      Guest             @relation(fields: [guestId], references: [id])
+  room       Room              @relation(fields: [roomId], references: [id])
+
+  @@index([incidentId, severity])
+}
