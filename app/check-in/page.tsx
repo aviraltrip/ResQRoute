@@ -1,8 +1,7 @@
-import React from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import CheckInForm from "@/components/CheckInForm";
+import { QrCode, ShieldAlert } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -14,14 +13,8 @@ export default async function CheckInPage() {
     if (existing) redirect(`/g/${existing.token}`);
   }
 
-  const rooms = await prisma.room.findMany({
-    orderBy: { number: 'asc' }
-  });
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
-      
-      {/* Background Ambience */}
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-100 blur-[120px] rounded-full pointer-events-none opacity-50" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-orange-100 blur-[120px] rounded-full pointer-events-none opacity-50" />
 
@@ -33,7 +26,24 @@ export default async function CheckInPage() {
           <h1 className="text-4xl font-black text-zinc-900 tracking-tight mb-2">Guest Portal</h1>
           <p className="text-zinc-500 text-sm">Secure digital access point for real-time safety</p>
         </div>
-        <CheckInForm rooms={rooms} />
+
+        <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm p-8 text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200 mb-4">
+            <QrCode className="w-7 h-7 text-blue-600" />
+          </div>
+          <h2 className="text-xl font-bold text-zinc-900 mb-2">Scan your check-in pass</h2>
+          <p className="text-zinc-500 text-sm leading-relaxed mb-5">
+            Room assignments are issued by the front desk. Please scan the QR code
+            on your key card, or open the personal link they sent to your phone.
+          </p>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-left flex gap-3">
+            <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-[13px] text-amber-900 leading-relaxed">
+              For your safety, only hotel staff can allocate rooms. This prevents
+              double-bookings and lets us reach the right guest in an emergency.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -59,6 +59,68 @@ export async function signOutGuest() {
   redirect("/check-in");
 }
 
+export async function preRegisterGuest(formData: FormData) {
+  const name = (formData.get("name") as string | null)?.trim();
+  const phone = (formData.get("phone") as string | null)?.trim();
+  const roomId = formData.get("roomId") as string | null;
+  const accessibility = formData.get("accessibility") === "on";
+
+  if (!name || !phone || !roomId) {
+    throw new Error("Missing required fields");
+  }
+
+  const { randomBytes } = await import("crypto");
+  const setupToken = randomBytes(16).toString("hex");
+
+  const guest = await prisma.guest.create({
+    data: {
+      name,
+      phone,
+      roomId,
+      accessibilityFlag: accessibility,
+      status: "pending_arrival",
+      setupToken,
+    },
+    include: { room: true },
+  });
+
+  revalidatePath("/staff");
+  return {
+    setupToken: guest.setupToken!,
+    guestName: guest.name,
+    roomNumber: guest.room.number,
+  };
+}
+
+export async function confirmGuestCheckIn(setupToken: string, formData: FormData) {
+  const phone = (formData.get("phone") as string | null)?.trim();
+  const accessibility = formData.get("accessibility") === "on";
+  if (!phone) throw new Error("Phone is required");
+
+  const guest = await prisma.guest.findUnique({ where: { setupToken } });
+  if (!guest) throw new Error("Invalid or expired setup link");
+
+  const updated = await prisma.guest.update({
+    where: { id: guest.id },
+    data: {
+      phone,
+      accessibilityFlag: accessibility,
+      status: "checked_in",
+      setupToken: null,
+    },
+  });
+
+  const cookieStore = await cookies();
+  cookieStore.set(GUEST_COOKIE, updated.token, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: GUEST_COOKIE_MAX_AGE,
+  });
+
+  redirect(`/g/${updated.token}`);
+}
+
 export async function triggerDistress(guestToken: string, text: string) {
   const guest = await prisma.guest.findUnique({
     where: { token: guestToken },
