@@ -64,6 +64,9 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
     checked_in: guests.filter(g => g.status === 'checked_in' && !messages.some(m => m.guestId === g.id)).length,
   };
 
+  const occupiedRoomIds = new Set(guests.map(g => g.roomId));
+  const availableRooms = rooms.filter(r => !occupiedRoomIds.has(r.id));
+
   const activeMessages = messages.filter(msg => guests.find(g => g.id === msg.guestId)?.status !== 'safe');
 
   return (
@@ -88,7 +91,7 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
           </div>
         </div>
         <div className="flex gap-4 items-center">
-          <PreRegisterDialog rooms={rooms} />
+          <PreRegisterDialog rooms={availableRooms} />
           <Button variant="outline" className="border-zinc-200 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 shadow-sm">End Incident</Button>
           
           <div className="flex bg-white border border-red-200 rounded-lg overflow-hidden shadow-sm">
