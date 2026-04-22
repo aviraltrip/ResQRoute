@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle2, Siren, HelpCircle, Activity, User, Maximize2, ShieldAlert } from "lucide-react";
+import { AlertCircle, CheckCircle2, Siren, HelpCircle, Activity, User, Maximize2, ShieldAlert, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Guest, DistressMessage, Room, IncidentType } from "@prisma/client";
 
@@ -31,6 +31,13 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'Guest' }, (payload) => {
         const updatedGuest = payload.new as GuestWithRoom;
         setGuests((prev) => prev.map(g => g.id === updatedGuest.id ? { ...g, ...updatedGuest } : g));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'Guest' }, (payload) => {
+        const removed = payload.old as { id?: string };
+        if (removed?.id) {
+          setGuests((prev) => prev.filter(g => g.id !== removed.id));
+          setMessages((prev) => prev.filter(m => m.guestId !== removed.id));
+        }
       })
       .subscribe();
 
@@ -131,7 +138,24 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
             <div className="flex-1 relative p-6 overflow-y-auto bg-slate-50/30">
                <div className="grid grid-cols-3 xl:grid-cols-4 gap-4">
                  {guests.map((guest) => (
-                   <div key={guest.id} className="bg-white border border-zinc-200 rounded-xl p-4 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-500 shadow-sm">
+                   <div key={guest.id} className="relative bg-white border border-zinc-200 rounded-xl p-4 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-500 shadow-sm">
+                     <button
+                       title="Check out / remove from roster"
+                       onClick={async () => {
+                         if (!confirm(`Remove ${guest.name} from the roster?`)) return;
+                         setGuests((prev) => prev.filter(g => g.id !== guest.id));
+                         setMessages((prev) => prev.filter(m => m.guestId !== guest.id));
+                         const { removeGuest } = await import('@/app/actions');
+                         try {
+                           await removeGuest(guest.id);
+                         } catch (err) {
+                           console.error('removeGuest failed', err);
+                         }
+                       }}
+                       className="absolute top-2 right-2 p-1 rounded-full text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                     >
+                       <X className="w-3.5 h-3.5" />
+                     </button>
                      <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mb-2">
                        <User className="w-5 h-5 text-slate-500" />
                      </div>
