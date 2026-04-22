@@ -116,11 +116,29 @@ export async function triggerAlarm(originRoomId: string, type: IncidentType) {
   // Auto-Dispatch SMS Notification
   const latestMessage = await prisma.distressMessage.findFirst({
     where: { roomId: room.id },
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
+    include: {
+      guest: true,
+      room: { include: { hotel: true } },
+    },
   });
 
   if (latestMessage && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
-    let smsBody = `[RESQROUTE DISPATCH] Room ${room.number}: ${latestMessage.summary || latestMessage.text}`;
+    const hotelName = latestMessage.room.hotel.name;
+    const roomNumber = latestMessage.room.number;
+    const floor = latestMessage.room.floor;
+    const guestName = latestMessage.guest.name;
+    const severity = latestMessage.severity ?? "?";
+    const category = latestMessage.category ?? "unknown";
+    const description = latestMessage.summary || latestMessage.text;
+
+    const smsBody =
+      `[RESQROUTE DISPATCH]\n` +
+      `Hotel: ${hotelName}\n` +
+      `Guest: ${guestName}\n` +
+      `Room: ${roomNumber} (Floor ${floor})\n` +
+      `Severity: ${severity}/5  |  Category: ${category}\n` +
+      `Problem: ${description}`;
 
     try {
       const twilio = (await import('twilio')).default;
