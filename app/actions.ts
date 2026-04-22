@@ -113,6 +113,29 @@ export async function triggerAlarm(originRoomId: string, type: IncidentType) {
     });
   }
 
+  // Auto-Dispatch SMS Notification
+  const latestMessage = await prisma.distressMessage.findFirst({
+    where: { roomId: room.id },
+    orderBy: { createdAt: "desc" }
+  });
+
+  if (latestMessage && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
+    let smsBody = `[RESQROUTE DISPATCH] Room ${room.number}: ${latestMessage.summary || latestMessage.text}`;
+
+    try {
+      const twilio = (await import('twilio')).default;
+      const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+      await client.messages.create({
+        body: smsBody.slice(0, 1500),
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: '+91 6363640564'
+      });
+      console.log("Sent Dispatch SMS to +91 6363640564");
+    } catch (err) {
+      console.error("Twilio SMS failed:", err);
+    }
+  }
+
   revalidatePath("/staff");
   return incident;
 }
