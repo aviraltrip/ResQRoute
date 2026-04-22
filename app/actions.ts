@@ -75,14 +75,27 @@ export async function triggerAlarm(originRoomId: string, type: IncidentType) {
   const room = await prisma.room.findUnique({ where: { id: originRoomId } });
   if (!room) throw new Error("Invalid room");
 
-  const incident = await prisma.incident.create({
-    data: {
-      hotelId: room.hotelId,
-      type,
-      originRoomId: room.id,
-      isDrill: false
-    }
-  });
+  const existingIncident = await prisma.incident.findFirst({ orderBy: { startedAt: "desc" } });
+
+  let incident;
+  if (existingIncident) {
+    incident = await prisma.incident.update({
+      where: { id: existingIncident.id },
+      data: {
+        originRoomId: room.id,
+        type,
+      }
+    });
+  } else {
+    incident = await prisma.incident.create({
+      data: {
+        hotelId: room.hotelId,
+        type,
+        originRoomId: room.id,
+        isDrill: false
+      }
+    });
+  }
 
   revalidatePath("/staff");
   return incident;

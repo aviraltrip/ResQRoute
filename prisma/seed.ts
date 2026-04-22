@@ -24,7 +24,11 @@ async function main() {
   await prisma.hotel.deleteMany();
 
   const hotel = await prisma.hotel.create({
-    data: { name: "Grand Harbor Hotel" },
+    data: {
+      name: "Atria Institute of Technology",
+      latitude: 13.0163,
+      longitude: 77.5713,
+    },
   });
 
   // Create guest rooms

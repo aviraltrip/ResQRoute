@@ -95,7 +95,7 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
                 setLoadingAction(true);
                 const { triggerAlarm } = await import("@/app/actions");
                 await triggerAlarm(selectedRoom, IncidentType.fire);
-                window.location.href = "/helpline";
+                window.location.href = `/helpline?roomId=${selectedRoom}`;
               }}
               className="bg-red-600 hover:bg-red-500 text-white rounded-none border-0 shadow-[0_0_20px_rgba(220,38,38,0.4)] h-full"
             >
@@ -171,13 +171,19 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
                 </div>
               )}
               {messages.map((msg) => (
-                <div key={msg.id} className={`p-4 rounded-xl border animate-in slide-in-from-right fade-in bg-red-950/20 border-red-900/30 shadow-[0_0_15px_rgba(153,27,27,0.1)] transition-colors cursor-pointer group`}>
+                <div 
+                  key={msg.id} 
+                  onClick={() => window.location.href = `/helpline?roomId=${msg.roomId}`}
+                  className={`p-4 rounded-xl border animate-in slide-in-from-right fade-in bg-red-950/20 border-red-900/30 shadow-[0_0_15px_rgba(153,27,27,0.1)] transition-colors cursor-pointer group`}
+                >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <div className="px-2 py-0.5 rounded text-[10px] uppercase font-mono font-bold tracking-wider bg-red-500/20 text-red-400">
-                        {msg.guestId.substring(0,6)}
+                        Room {rooms.find(r => r.id === msg.roomId)?.number || 'Unknown'}
                       </div>
-                      <span className="font-medium text-sm text-slate-200 uppercase">Emergency Protocol</span>
+                      <span className="font-medium text-sm text-slate-200 uppercase">
+                        {guests.find(g => g.id === msg.guestId)?.name || 'Unknown Guest'}
+                      </span>
                     </div>
                     <Badge className="bg-red-500 hover:bg-red-400 text-white border-0 animate-pulse">
                       Sev {msg.severity}
