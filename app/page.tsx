@@ -1,9 +1,10 @@
 import React from "react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Siren, Navigation, Smartphone, Activity, ShieldAlert, ArrowRight } from "lucide-react";
-
+import { ShieldAlert, Play, Heart } from "lucide-react";
 import CheckInForm from "@/components/CheckInForm";
+import { WebGLShader } from "@/components/ui/web-gl-shader";
+import { LiquidButton } from "@/components/ui/liquid-glass-button";
 
 export const dynamic = "force-dynamic";
 
@@ -14,72 +15,64 @@ export default async function DemoPortal() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col font-sans relative overflow-hidden">
+    <div className="relative flex min-h-screen w-full flex-col items-center bg-white overflow-x-hidden font-sans">
+      <WebGLShader />
       
-      {/* Background Glow Effects */}
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/30 blur-[150px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-red-600/20 blur-[150px] rounded-full pointer-events-none" />
-
       {/* Navbar / Header */}
-      <header className="relative z-10 p-6 flex flex-col items-center justify-center pt-24 pb-12 text-center">
-        <div className="inline-flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 border border-slate-700/50 rounded-2xl mb-6 shadow-2xl shadow-blue-900/20 backdrop-blur-xl">
-          <ShieldAlert className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500" />
+      <header className="w-full flex items-center justify-between p-6 max-w-6xl mx-auto z-10">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center p-2 rounded-xl border border-red-100 shadow-sm bg-white">
+            <ShieldAlert className="w-5 h-5 text-red-600" />
+          </div>
+          <span className="text-xl font-bold text-zinc-900 tracking-tight">ResQRoute</span>
         </div>
-        <h1 className="text-4xl sm:text-6xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-white via-slate-200 to-slate-500">
-          ResQRoute
-        </h1>
-        <p className="mt-4 text-slate-400 text-lg sm:text-xlg max-w-2xl text-center px-4 font-medium">
-          Real-time hotel emergency coordination. Experience the synchronization across all devices instantly in this simulation portal.
-        </p>
       </header>
 
-      {/* Main Simulation Routes */}
-      <main className="relative z-10 flex-1 px-4 pb-20 w-full max-w-6xl mx-auto flex flex-col items-center">
+      {/* Main Content */}
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 pt-16 pb-24 w-full max-w-4xl mx-auto">
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mb-12">
-          
-          {/* Staff Dashboard Link */}
-          <Link href="/staff" className="group relative p-[1px] rounded-3xl overflow-hidden focus:outline-none focus:ring-4 focus:ring-blue-500/50">
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-600 transition-colors duration-500" />
-            <div className="relative h-full bg-slate-900/90 backdrop-blur-2xl rounded-3xl p-8 flex flex-col justify-between">
-              <div>
-                <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400 mb-6 group-hover:scale-110 group-hover:bg-blue-500/20 transition-all duration-300">
-                  <Activity className="w-7 h-7" />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Staff Command Center</h2>
-                <p className="text-slate-400 leading-relaxed">Desktop dashboard. Trigger emergencies, monitor live guest evacuations, and read the real-time AI-triaged distress feed.</p>
-              </div>
-              <div className="mt-8 flex items-center text-blue-400 font-semibold group-hover:translate-x-2 transition-transform duration-300">
-                Launch Dashboard <ArrowRight className="ml-2 w-5 h-5" />
-              </div>
-            </div>
-          </Link>
-
-          {/* Responder View Link */}
-          <Link href="/responder/INC123" className="group relative p-[1px] rounded-3xl overflow-hidden focus:outline-none focus:ring-4 focus:ring-orange-500/50">
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 group-hover:from-orange-600 group-hover:via-red-600 group-hover:to-pink-600 transition-colors duration-500" />
-            <div className="relative h-full bg-slate-900/90 backdrop-blur-2xl rounded-3xl p-8 flex flex-col justify-between">
-              <div>
-                <div className="w-14 h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center text-orange-400 mb-6 group-hover:scale-110 group-hover:bg-orange-500/20 transition-all duration-300">
-                  <Siren className="w-7 h-7" />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Responder Tactical Map</h2>
-                <p className="text-slate-400 leading-relaxed">Tablet interface. Gives first responders a blueprint of the origin point and tracks the priority mobility-impaired guests.</p>
-              </div>
-              <div className="mt-8 flex items-center text-orange-400 font-semibold group-hover:translate-x-2 transition-transform duration-300">
-                Launch Tablet View <ArrowRight className="ml-2 w-5 h-5" />
-              </div>
-            </div>
-          </Link>
-
+        {/* Badge */}
+        <div className="mb-8 flex items-center justify-center gap-2 px-4 py-1.5 rounded-full border border-zinc-200 bg-white shadow-sm">
+          <span className="relative flex h-2 w-2 items-center justify-center">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75"></span>
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500"></span>
+          </span>
+          <p className="text-xs text-zinc-500 font-medium">Next Generation Emergency Platform</p>
         </div>
-
-        {/* Guest Devices List -> Replaced with CheckIn */}
-        <div className="w-full mt-10">
-          <CheckInForm rooms={rooms} />
+        
+        {/* Title */}
+        <h1 className="mb-6 text-zinc-900 text-center text-5xl sm:text-7xl font-extrabold tracking-tighter md:text-[clamp(3rem,8vw,6rem)] leading-tight">
+          Instant.<span className="text-red-600 italic pr-1">Help</span> When It<br/>Matters Most
+        </h1>
+        
+        {/* Subtitle */}
+        <p className="text-zinc-500 px-6 text-center text-sm md:text-lg max-w-2xl mb-12">
+          From live triage to room-by-room evacuation, ResQRoute delivers the real-time clarity that saves lives in the first critical minutes.
+        </p>
+        
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 w-full max-w-lg mx-auto mb-16"> 
+          <Link href="/staff" className="w-full sm:w-auto">
+            <LiquidButton className="text-white border-red-700 bg-red-600 hover:bg-red-700 rounded-full w-full sm:w-auto shadow-lg shadow-red-600/20" size={'xl'}>
+              <Heart className="w-4 h-4 fill-white mr-1" /> Trigger Distress Alarm
+            </LiquidButton>
+          </Link>
+          <Link href="/responder/INC123" className="w-full sm:w-auto">
+            <LiquidButton className="text-zinc-700 border border-zinc-200 bg-white hover:bg-zinc-50 rounded-full w-full sm:w-auto shadow-sm" variant="outline" size={'xl'}>
+              <Play className="w-4 h-4 mr-1 fill-zinc-700" /> Watch Live Demo
+            </LiquidButton>
+          </Link>
+        </div> 
+        
+        {/* Check-in section */}
+        <div className="w-full max-w-2xl mt-8 pt-12 border-t border-zinc-100 flex flex-col items-center">
+          <p className="text-sm font-medium text-zinc-400 mb-6 uppercase tracking-widest">Simulate Guest Devices</p>
+          <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-100 p-6">
+            <CheckInForm rooms={rooms} />
+          </div>
         </div>
 
       </main>
     </div>
-  );
+  )
 }
