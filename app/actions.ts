@@ -149,8 +149,25 @@ export async function triggerAlarm(originRoomId: string, type: IncidentType) {
         to: '+91 6363640564'
       });
       console.log("Sent Dispatch SMS to +91 6363640564");
+
+      const escapeXml = (s: string) =>
+        s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+      const spokenLine = `Emergency dispatch from ${hotelName}. Guest ${guestName} in room ${roomNumber}, floor ${floor}, reports: ${description}. Severity ${severity} of 5. Category ${String(category).replace(/_/g, " ")}.`;
+      const twiml =
+        `<Response>` +
+        `<Say voice="alice">${escapeXml(spokenLine)}</Say>` +
+        `<Pause length="1"/>` +
+        `<Say voice="alice">${escapeXml("Repeat. " + spokenLine)}</Say>` +
+        `</Response>`;
+
+      await client.calls.create({
+        twiml,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: '+91 6363640564'
+      });
+      console.log("Placed Dispatch Voice Call to +91 6363640564");
     } catch (err) {
-      console.error("Twilio SMS failed:", err);
+      console.error("Twilio dispatch failed:", err);
     }
   }
 
