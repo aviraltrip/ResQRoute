@@ -50,19 +50,41 @@ export default async function DemoPortal() {
           From live triage to room-by-room evacuation, ResQRoute delivers the real-time clarity that saves lives in the first critical minutes.
         </p>
         
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 w-full max-w-lg mx-auto mb-16"> 
-          <Link href="/staff" className="w-full sm:w-auto">
-            <LiquidButton className="text-white border-red-700 bg-red-600 hover:bg-red-700 rounded-full w-full sm:w-auto shadow-lg shadow-red-600/20" size={'xl'}>
-              <Heart className="w-4 h-4 fill-white mr-1" /> Trigger Distress Alarm
-            </LiquidButton>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl mx-auto mb-16">
+          {/* Staff Dashboard Link */}
+          <Link href="/staff" className="group relative p-[1px] rounded-[24px] overflow-hidden focus:outline-none focus:ring-4 focus:ring-blue-500/50">
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-200 via-slate-300 to-slate-400 group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-600 transition-colors duration-500" />
+            <div className="relative h-full bg-white backdrop-blur-2xl rounded-[24px] p-8 flex flex-col justify-between border border-zinc-100 shadow-sm">
+              <div>
+                <div className="w-14 h-14 bg-blue-50 rounded-[16px] flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                  <Heart className="w-7 h-7" />
+                </div>
+                <h2 className="text-2xl font-bold text-zinc-900 mb-2">Staff Command Center</h2>
+                <p className="text-zinc-500 leading-relaxed">Desktop dashboard. Trigger emergencies, monitor live guest evacuations, and read the real-time AI-triaged distress feed.</p>
+              </div>
+              <div className="mt-8 flex items-center text-blue-600 font-semibold group-hover:translate-x-2 transition-transform duration-300">
+                Launch Dashboard <Play className="ml-2 w-4 h-4 fill-blue-600" />
+              </div>
+            </div>
           </Link>
-          <Link href="/responder/INC123" className="w-full sm:w-auto">
-            <LiquidButton className="text-zinc-700 border border-zinc-200 bg-white hover:bg-zinc-50 rounded-full w-full sm:w-auto shadow-sm" variant="outline" size={'xl'}>
-              <Play className="w-4 h-4 mr-1 fill-zinc-700" /> Watch Live Demo
-            </LiquidButton>
+
+          {/* Responder View Link */}
+          <Link href="/responder/INC123" className="group relative p-[1px] rounded-[24px] overflow-hidden focus:outline-none focus:ring-4 focus:ring-orange-500/50">
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-200 via-slate-300 to-slate-400 group-hover:from-orange-600 group-hover:via-red-600 group-hover:to-pink-600 transition-colors duration-500" />
+            <div className="relative h-full bg-white backdrop-blur-2xl rounded-[24px] p-8 flex flex-col justify-between border border-zinc-100 shadow-sm">
+              <div>
+                <div className="w-14 h-14 bg-orange-50 rounded-[16px] flex items-center justify-center text-orange-600 mb-6 group-hover:scale-110 group-hover:bg-orange-600 group-hover:text-white transition-all duration-300">
+                  <ShieldAlert className="w-7 h-7" />
+                </div>
+                <h2 className="text-2xl font-bold text-zinc-900 mb-2">Responder Tactical Map</h2>
+                <p className="text-zinc-500 leading-relaxed">Tablet interface. Gives first responders a blueprint of the origin point and tracks the priority mobility-impaired guests.</p>
+              </div>
+              <div className="mt-8 flex items-center text-orange-600 font-semibold group-hover:translate-x-2 transition-transform duration-300">
+                Launch Tablet View <Play className="ml-2 w-4 h-4 fill-orange-600" />
+              </div>
+            </div>
           </Link>
-        </div> 
+        </div>
         
         {/* Check-in section */}
         <div className="w-full max-w-2xl mt-8 pt-12 border-t border-zinc-100 flex flex-col items-center">

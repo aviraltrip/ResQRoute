@@ -39,33 +39,35 @@ export function WebGLShader() {
       uniform vec2 resolution;
       uniform float time;
 
-      // Heartrate EKG function
+      // Stable EKG function with varying spike heights
       float ekg(float x) {
-          float t = time * 2.5;
-          float p = mod(x - t, 4.0);
+          // Adjust time speed
+          float t = time * 2.0;
+          float pos = x - t;
           
-          float y = 0.0;
+          // Divide into repeating segments
+          float segment = floor(pos / 3.0);
+          float p = fract(pos / 3.0);
           
-          // P wave
-          if (p > 0.4 && p < 0.6) {
-              y = sin((p - 0.4) * 3.14159 * 5.0) * 0.1;
-          }
-          // QRS complex
-          else if (p > 0.8 && p < 0.9) {
-              y = -sin((p - 0.8) * 3.14159 * 10.0) * 0.2;
-          }
-          else if (p > 0.9 && p < 1.0) {
-              y = sin((p - 0.9) * 3.14159 * 10.0) * 0.8;
-          }
-          else if (p > 1.0 && p < 1.1) {
-              y = -sin((p - 1.0) * 3.14159 * 10.0) * 0.3;
-          }
-          // T wave
-          else if (p > 1.4 && p < 1.8) {
-              y = sin((p - 1.4) * 3.14159 * 2.5) * 0.15;
-          }
+          // Pseudo-random height for the main spike
+          float h = 0.5 + 0.8 * fract(sin(segment * 12.9898) * 43758.5453);
           
-          return y;
+          // P wave (small bump before)
+          float p_wave = 0.1 * exp(-pow((p - 0.25) * 25.0, 2.0));
+          
+          // Q wave (small dip)
+          float q_wave = -0.15 * exp(-pow((p - 0.42) * 80.0, 2.0));
+          
+          // R wave (main tall spike, randomly varying height)
+          float r_wave = h * exp(-pow((p - 0.48) * 100.0, 2.0));
+          
+          // S wave (deep dip)
+          float s_wave = -0.3 * h * exp(-pow((p - 0.54) * 80.0, 2.0));
+          
+          // T wave (small bump after)
+          float t_wave = 0.15 * exp(-pow((p - 0.75) * 15.0, 2.0));
+          
+          return p_wave + q_wave + r_wave + s_wave + t_wave;
       }
 
       void main() {
@@ -73,14 +75,24 @@ export function WebGLShader() {
         uv = uv * 2.0 - 1.0;
         uv.x *= resolution.x / resolution.y;
 
-        float scaledX = uv.x * 3.0;
+        float scaledX = uv.x * 2.5;
         float curveY = ekg(scaledX);
+        
+        // Distance to the curve
         float dist = abs(uv.y - curveY);
         
-        float intensity = 0.015 / (dist + 0.005);
-        vec3 color = vec3(1.0, 0.1, 0.2) * intensity;
+        // Stable, crisp line
+        float line = smoothstep(0.015, 0.005, dist);
         
-        gl_FragColor = vec4(color, intensity);
+        // Vibrant glow
+        float glow = 0.02 / (dist + 0.005);
+        
+        float intensity = line + glow;
+        
+        // Highly vibrant red color
+        vec3 color = vec3(1.0, 0.0, 0.15); 
+        
+        gl_FragColor = vec4(color * intensity, intensity);
       }
     `
 
