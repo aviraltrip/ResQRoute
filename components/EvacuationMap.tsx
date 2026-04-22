@@ -11,8 +11,8 @@ interface EvacuationMapProps {
   currentFloor: number;
 }
 
-const MAP_WIDTH = 1200;
-const MAP_HEIGHT = 800;
+const MAP_WIDTH = 1400;
+const MAP_HEIGHT = 900;
 
 type MapRoom = {
   id: string;
@@ -25,49 +25,85 @@ type MapRoom = {
   corridorNodeY: number;
 };
 
-// Generate static layout map based on reference image
+// Generate static layout map
 const mapRooms: MapRoom[] = [];
-// Top (301 - 320)
-for (let i = 0; i < 20; i++) {
+let roomId = 1;
+
+// Top (19 rooms, 301-319)
+for (let i = 0; i < 19; i++) {
+  const num = `3${roomId.toString().padStart(2, '0')}`;
   mapRooms.push({
-    id: `3${(i + 1).toString().padStart(2, '0')}`,
-    number: `3${(i + 1).toString().padStart(2, '0')}`,
-    x: 180 + i * 42, y: 80, width: 40, height: 100,
-    corridorNodeX: 180 + i * 42 + 20, corridorNodeY: 220
+    id: num, number: num,
+    x: 220 + i * 40, y: 80, width: 40, height: 100,
+    corridorNodeX: 220 + i * 40 + 20, corridorNodeY: 210
   });
+  roomId++;
 }
-// Left (321 - 325)
-for (let i = 0; i < 5; i++) {
+// Right (6 rooms, 320-325)
+for (let i = 0; i < 6; i++) {
+  const num = `3${roomId.toString().padStart(2, '0')}`;
   mapRooms.push({
-    id: `3${21 + i}`,
-    number: `3${21 + i}`,
-    x: 60, y: 260 + i * 64, width: 100, height: 60,
-    corridorNodeX: 200, corridorNodeY: 260 + i * 64 + 30
+    id: num, number: num,
+    x: 1040, y: 240 + i * 60, width: 100, height: 60,
+    corridorNodeX: 1010, corridorNodeY: 240 + i * 60 + 30
   });
+  roomId++;
 }
-// Bottom (328 - 341) - 14 rooms
-for (let i = 0; i < 14; i++) {
+// Bottom Right (7 rooms, 326-332)
+for (let i = 0; i < 7; i++) {
+  const num = `3${roomId.toString().padStart(2, '0')}`;
   mapRooms.push({
-    id: `3${28 + i}`,
-    number: `3${28 + i}`,
-    x: 270 + i * 50, y: 640, width: 45, height: 100,
-    corridorNodeX: 270 + i * 50 + 22.5, corridorNodeY: 600
+    id: num, number: num,
+    x: 940 - i * 40, y: 660, width: 40, height: 100,
+    corridorNodeX: 940 - i * 40 + 20, corridorNodeY: 630
   });
+  roomId++;
 }
-// Right (342 - 346)
-for (let i = 0; i < 5; i++) {
+// Bottom Left (7 rooms, 333-339)
+for (let i = 0; i < 7; i++) {
+  const num = `3${roomId.toString().padStart(2, '0')}`;
   mapRooms.push({
-    id: `3${42 + i}`,
-    number: `3${42 + i}`,
-    x: 1040, y: 260 + (4 - i) * 64, width: 100, height: 60,
-    corridorNodeX: 1000, corridorNodeY: 260 + (4 - i) * 64 + 30
+    id: num, number: num,
+    x: 460 - i * 40, y: 660, width: 40, height: 100,
+    corridorNodeX: 460 - i * 40 + 20, corridorNodeY: 630
   });
+  roomId++;
+}
+// Left (6 rooms, 340-345)
+for (let i = 0; i < 6; i++) {
+  const num = `3${roomId.toString().padStart(2, '0')}`;
+  mapRooms.push({
+    id: num, number: num,
+    x: 60, y: 540 - i * 60, width: 100, height: 60,
+    corridorNodeX: 190, corridorNodeY: 540 - i * 60 + 30
+  });
+  roomId++;
 }
 
 const exits = [
-  { id: 'EXIT_A', label: 'EXIT A', x: 60, y: 80, width: 100, height: 100, corridorNodeX: 200, corridorNodeY: 220 },
-  { id: 'EXIT_B', label: 'EXIT B', x: 1040, y: 80, width: 100, height: 100, corridorNodeX: 1000, corridorNodeY: 220 }
+  { id: 'EXIT_A', label: 'EXIT A', x: 60, y: 80, width: 100, height: 100, corridorNodeX: 190, corridorNodeY: 210 },
+  { id: 'EXIT_B', label: 'EXIT B', x: 1040, y: 80, width: 100, height: 100, corridorNodeX: 1010, corridorNodeY: 210 }
 ];
+
+const specialAreas = [
+  { id: 'WASH_M_L', label: 'Male Washroom', cx: 400, cy: 420, nx: 400, ny: 630 },
+  { id: 'WASH_F_L', label: 'Female Washroom', cx: 440, cy: 420, nx: 440, ny: 630 },
+  { id: 'STAIRS_L', label: 'Left Stairs', cx: 490, cy: 420, nx: 490, ny: 630 },
+  { id: 'ELEVATORS', label: 'Elevators', cx: 600, cy: 420, nx: 600, ny: 630 },
+  { id: 'STAIRS_R', label: 'Right Stairs', cx: 710, cy: 420, nx: 710, ny: 630 },
+  { id: 'WASH_F_R', label: 'Female Washroom', cx: 760, cy: 420, nx: 760, ny: 630 },
+  { id: 'WASH_M_R', label: 'Male Washroom', cx: 800, cy: 420, nx: 800, ny: 630 },
+  { id: 'LINEN', label: 'Linen Room', cx: 110, cy: 210, nx: 190, ny: 210 },
+  { id: 'UTILITY', label: 'Utility Room', cx: 1090, cy: 210, nx: 1010, ny: 210 },
+  { id: 'RECEPTION', label: 'Reception', cx: 600, cy: 710, nx: 600, ny: 630 },
+];
+
+const getRoomLabel = (id: string) => {
+  const special = specialAreas.find(s => s.id === id);
+  if (special) return special.label;
+  if (id.startsWith('3')) return `Room ${id}`;
+  return id;
+};
 
 // --- Build Navigation Graph ---
 type GraphNode = { id: string; x: number; y: number };
@@ -83,9 +119,14 @@ exits.forEach(e => {
   nodes.push({ id: e.id, x: e.x + e.width / 2, y: e.y + e.height / 2 });
   nodes.push({ id: `C_${e.id}`, x: e.corridorNodeX, y: e.corridorNodeY });
 });
+specialAreas.forEach(a => {
+  nodes.push({ id: a.id, x: a.cx, y: a.cy });
+  nodes.push({ id: `C_${a.id}`, x: a.nx, y: a.ny });
+});
+
 // Corners
-nodes.push({ id: 'C_TL', x: 200, y: 220 }, { id: 'C_TR', x: 1000, y: 220 });
-nodes.push({ id: 'C_BL', x: 200, y: 600 }, { id: 'C_BR', x: 1000, y: 600 });
+nodes.push({ id: 'C_TL', x: 190, y: 210 }, { id: 'C_TR', x: 1010, y: 210 });
+nodes.push({ id: 'C_BL', x: 190, y: 630 }, { id: 'C_BR', x: 1010, y: 630 });
 
 function addEdge(n1: string, n2: string) {
   const node1 = nodes.find(n => n.id === n1);
@@ -98,17 +139,40 @@ function addEdge(n1: string, n2: string) {
 
 mapRooms.forEach(r => addEdge(r.id, `C_${r.id}`));
 exits.forEach(e => addEdge(e.id, `C_${e.id}`));
+specialAreas.forEach(a => addEdge(a.id, `C_${a.id}`));
+
+const isBlocked = (x1: number, y1: number, x2: number, y2: number) => {
+  const minX = Math.min(x1, x2);
+  const maxX = Math.max(x1, x2);
+  // Top right corridor blockage
+  if (Math.abs(y1 - 210) < 1 && Math.abs(y2 - 210) < 1) {
+    if (minX < 875 && maxX > 845) return true;
+  }
+  // Bottom left corridor blockage
+  if (Math.abs(y1 - 630) < 1 && Math.abs(y2 - 630) < 1) {
+    if (minX < 310 && maxX > 290) return true;
+  }
+  return false;
+};
 
 // Connect Corridors
-['220', '600'].forEach(yStr => {
+['210', '630'].forEach(yStr => {
   const y = parseInt(yStr);
   const corridor = nodes.filter(n => n.id.startsWith('C_') && Math.abs(n.y - y) < 1).sort((a, b) => a.x - b.x);
-  for (let i = 0; i < corridor.length - 1; i++) addEdge(corridor[i].id, corridor[i + 1].id);
+  for (let i = 0; i < corridor.length - 1; i++) {
+    if (!isBlocked(corridor[i].x, corridor[i].y, corridor[i+1].x, corridor[i+1].y)) {
+      addEdge(corridor[i].id, corridor[i+1].id);
+    }
+  }
 });
-['200', '1000'].forEach(xStr => {
+['190', '1010'].forEach(xStr => {
   const x = parseInt(xStr);
   const corridor = nodes.filter(n => n.id.startsWith('C_') && Math.abs(n.x - x) < 1).sort((a, b) => a.y - b.y);
-  for (let i = 0; i < corridor.length - 1; i++) addEdge(corridor[i].id, corridor[i + 1].id);
+  for (let i = 0; i < corridor.length - 1; i++) {
+    if (!isBlocked(corridor[i].x, corridor[i].y, corridor[i+1].x, corridor[i+1].y)) {
+      addEdge(corridor[i].id, corridor[i+1].id);
+    }
+  }
 });
 
 // Dijkstra Pathfinding
@@ -170,7 +234,6 @@ function findShortestPath(startId: string, exitIds: string[]) {
 export default function EvacuationMap({ route, floorRooms, currentFloor }: EvacuationMapProps) {
   const [mounted, setMounted] = useState(false);
   
-  // Try to default to the backend route start if possible, otherwise 312
   const defaultStart = route && route[0] ? route[0].roomNumber.match(/\d{2}$/) ? `3${route[0].roomNumber.match(/\d{2}$/)![0]}` : '312' : '312';
   const [startRoom, setStartRoom] = useState<string>(defaultStart);
 
@@ -189,34 +252,34 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
   if (!mounted) return null;
 
   const distMeters = (distance / 12).toFixed(0);
-  const timeSecs = (distance / 12 / 1.5).toFixed(0); // Assuming 1.5m/s walking speed
+  const timeSecs = (distance / 12 / 1.5).toFixed(0);
 
   return (
     <div className="w-full h-full bg-[#f4f1ea] text-slate-800 font-sans relative overflow-hidden flex flex-col items-center justify-center">
       
-      {/* Header matching the image */}
-      <div className="absolute top-4 left-4 flex flex-col items-center bg-white p-4 shadow-xl border border-slate-200 z-10 w-64 rounded-sm pointer-events-none">
-        <h1 className="font-serif text-xl font-bold tracking-widest text-[#8b7355] uppercase text-center mb-1">
+      {/* Header scaled down to preserve map space */}
+      <div className="absolute top-3 left-3 flex flex-col items-center bg-white/95 p-3 shadow-xl border border-slate-200 z-10 w-48 rounded-sm backdrop-blur-sm pointer-events-none">
+        <h1 className="font-serif text-lg font-bold tracking-widest text-[#8b7355] uppercase text-center mb-0.5 leading-tight">
           Grand Horizon Hotel
         </h1>
-        <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-4">Your Safety, Our Priority</p>
+        <p className="text-[9px] uppercase tracking-widest text-slate-500 mb-2">Your Safety, Our Priority</p>
         
-        <div className="w-full h-px bg-slate-200 mb-4" />
+        <div className="w-full h-px bg-slate-200 mb-2" />
         
-        <h2 className="text-2xl font-bold text-[#1a4a38] uppercase">Floor {currentFloor}</h2>
-        <p className="text-sm font-semibold tracking-wider mb-4">EVACUATION MAP</p>
+        <h2 className="text-xl font-bold text-[#1a4a38] uppercase">Floor {currentFloor}</h2>
+        <p className="text-xs font-semibold tracking-wider mb-3">EVACUATION MAP</p>
         
-        <div className="w-full border-2 border-red-500 rounded p-2 text-center bg-red-50 flex flex-col items-center">
-          <p className="text-red-600 font-bold uppercase text-xs flex items-center gap-1">
+        <div className="w-full border border-red-500 rounded p-1.5 text-center bg-red-50 flex flex-col items-center">
+          <p className="text-red-600 font-bold uppercase text-[10px] flex items-center gap-1">
             <MousePointerClick className="w-3 h-3" /> Select a Room
           </p>
-          <p className="font-bold text-lg mt-1">Room {startRoom}</p>
+          <p className="font-bold text-base mt-0.5">{getRoomLabel(startRoom)}</p>
         </div>
       </div>
 
       <div className="w-full h-full max-w-full overflow-auto relative">
         <svg 
-          viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} 
+          viewBox="-50 -50 1300 900" 
           className="w-full h-full min-w-[1000px] object-contain drop-shadow-2xl select-none"
           style={{ background: '#f4f1ea' }}
         >
@@ -239,49 +302,56 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
             </pattern>
           </defs>
 
-          <rect width="100%" height="100%" fill="url(#grid)" />
+          <rect x="-50" y="-50" width="1300" height="900" fill="url(#grid)" />
 
-          {/* Central Core Area */}
+          {/* Central Core Area with proper symmetry */}
           <g filter="url(#shadow)">
-            <rect x="350" y="320" width="500" height="180" fill="#e2dcd0" stroke="#a39a8c" strokeWidth="2" />
+            <rect x="380" y="330" width="440" height="180" fill="#e2dcd0" stroke="#a39a8c" strokeWidth="2" />
             
-            {/* Elevators (Center Top of core) */}
-            <rect x="480" y="320" width="240" height="80" fill="#d1ccc0" stroke="#a39a8c" strokeWidth="2" />
-            <text x="600" y="365" textAnchor="middle" fontSize="16" fontWeight="bold" fill="#555">ELEVATORS</text>
-            <g transform="translate(520, 335)">
-              <rect x="0" y="0" width="25" height="25" fill="none" stroke="#555" strokeWidth="2" />
-              <ArrowRight className="w-5 h-5 text-[#555]" x="2" y="2" transform="rotate(90 12.5 12.5) scale(0.8)" />
+            {/* Left Washrooms */}
+            <g onClick={() => setStartRoom('WASH_M_L')} className="cursor-pointer group">
+              <rect x="380" y="330" width="40" height="180" fill={startRoom === 'WASH_M_L' ? "#fee2e2" : "#a4bbf0"} stroke={startRoom === 'WASH_M_L' ? "#ef4444" : "#a39a8c"} strokeWidth={startRoom === 'WASH_M_L' ? "3" : "1"} className="transition-all duration-300 group-hover:brightness-110" />
+              <text x="400" y="420" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#333" transform="rotate(-90 400,420)" className="pointer-events-none">MALE</text>
             </g>
-            <g transform="translate(560, 335)">
-              <rect x="0" y="0" width="25" height="25" fill="none" stroke="#555" strokeWidth="2" />
-              <ArrowRight className="w-5 h-5 text-[#555]" x="2" y="2" transform="rotate(90 12.5 12.5) scale(0.8)" />
+            <g onClick={() => setStartRoom('WASH_F_L')} className="cursor-pointer group">
+              <rect x="420" y="330" width="40" height="180" fill={startRoom === 'WASH_F_L' ? "#fee2e2" : "#f0a4b4"} stroke={startRoom === 'WASH_F_L' ? "#ef4444" : "#a39a8c"} strokeWidth={startRoom === 'WASH_F_L' ? "3" : "1"} className="transition-all duration-300 group-hover:brightness-110" />
+              <text x="440" y="420" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#333" transform="rotate(-90 440,420)" className="pointer-events-none">FEMALE</text>
             </g>
-            <g transform="translate(600, 335)">
-              <rect x="0" y="0" width="25" height="25" fill="none" stroke="#555" strokeWidth="2" />
-              <ArrowRight className="w-5 h-5 text-[#555]" x="2" y="2" transform="rotate(-90 12.5 12.5) scale(0.8)" />
-            </g>
-            <g transform="translate(640, 335)">
-              <rect x="0" y="0" width="25" height="25" fill="none" stroke="#555" strokeWidth="2" />
-              <ArrowRight className="w-5 h-5 text-[#555]" x="2" y="2" transform="rotate(-90 12.5 12.5) scale(0.8)" />
+            
+            {/* Left Stairs */}
+            <g onClick={() => setStartRoom('STAIRS_L')} className="cursor-pointer group">
+              <rect x="460" y="330" width="60" height="180" fill={startRoom === 'STAIRS_L' ? "#fee2e2" : "#c4bfb3"} stroke={startRoom === 'STAIRS_L' ? "#ef4444" : "#a39a8c"} strokeWidth={startRoom === 'STAIRS_L' ? "3" : "1"} className="transition-all duration-300 group-hover:brightness-110" />
+              <text x="490" y="420" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#555" transform="rotate(-90 490,420)" className="pointer-events-none">STAIRS</text>
+              <line x1="475" y1="330" x2="475" y2="510" stroke="#a39a8c" strokeWidth="1" strokeDasharray="4,4" className="pointer-events-none" />
+              <line x1="505" y1="330" x2="505" y2="510" stroke="#a39a8c" strokeWidth="1" strokeDasharray="4,4" className="pointer-events-none" />
             </g>
 
-            {/* Central Stairs (Left & Right inside core) */}
-            <rect x="350" y="320" width="100" height="180" fill="#c4bfb3" stroke="#a39a8c" strokeWidth="2" />
-            <text x="400" y="410" textAnchor="middle" fontSize="16" fontWeight="bold" fill="#555" transform="rotate(-90 400,410)">STAIRS</text>
-            <line x1="370" y1="320" x2="370" y2="500" stroke="#a39a8c" strokeWidth="1" strokeDasharray="5,5" />
+            {/* Elevators */}
+            <g onClick={() => setStartRoom('ELEVATORS')} className="cursor-pointer group">
+              <rect x="520" y="330" width="160" height="180" fill={startRoom === 'ELEVATORS' ? "#fee2e2" : "#d1ccc0"} stroke={startRoom === 'ELEVATORS' ? "#ef4444" : "#a39a8c"} strokeWidth={startRoom === 'ELEVATORS' ? "3" : "1"} className="transition-all duration-300 group-hover:brightness-110" />
+              <text x="600" y="425" textAnchor="middle" fontSize="16" fontWeight="bold" fill="#555" className="pointer-events-none">ELEVATORS</text>
+              <rect x="540" y="340" width="30" height="30" fill="none" stroke="#555" strokeWidth="2" className="pointer-events-none" />
+              <rect x="580" y="340" width="30" height="30" fill="none" stroke="#555" strokeWidth="2" className="pointer-events-none" />
+              <rect x="630" y="340" width="30" height="30" fill="none" stroke="#555" strokeWidth="2" className="pointer-events-none" />
+            </g>
             
-            <rect x="750" y="320" width="100" height="180" fill="#c4bfb3" stroke="#a39a8c" strokeWidth="2" />
-            <text x="800" y="410" textAnchor="middle" fontSize="16" fontWeight="bold" fill="#555" transform="rotate(-90 800,410)">STAIRS</text>
-            <line x1="770" y1="320" x2="770" y2="500" stroke="#a39a8c" strokeWidth="1" strokeDasharray="5,5" />
+            {/* Right Stairs */}
+            <g onClick={() => setStartRoom('STAIRS_R')} className="cursor-pointer group">
+              <rect x="680" y="330" width="60" height="180" fill={startRoom === 'STAIRS_R' ? "#fee2e2" : "#c4bfb3"} stroke={startRoom === 'STAIRS_R' ? "#ef4444" : "#a39a8c"} strokeWidth={startRoom === 'STAIRS_R' ? "3" : "1"} className="transition-all duration-300 group-hover:brightness-110" />
+              <text x="710" y="420" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#555" transform="rotate(-90 710,420)" className="pointer-events-none">STAIRS</text>
+              <line x1="695" y1="330" x2="695" y2="510" stroke="#a39a8c" strokeWidth="1" strokeDasharray="4,4" className="pointer-events-none" />
+              <line x1="725" y1="330" x2="725" y2="510" stroke="#a39a8c" strokeWidth="1" strokeDasharray="4,4" className="pointer-events-none" />
+            </g>
 
-            {/* Washrooms (Bottom Center of core) */}
-            <rect x="480" y="400" width="120" height="100" fill="#a4bbf0" stroke="#a39a8c" strokeWidth="2" />
-            <text x="540" y="450" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#333">MALE</text>
-            <text x="540" y="465" textAnchor="middle" fontSize="10" fill="#333">WASHROOM</text>
-            
-            <rect x="600" y="400" width="120" height="100" fill="#a4bbf0" stroke="#a39a8c" strokeWidth="2" />
-            <text x="660" y="450" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#333">FEMALE</text>
-            <text x="660" y="465" textAnchor="middle" fontSize="10" fill="#333">WASHROOM</text>
+            {/* Right Washrooms */}
+            <g onClick={() => setStartRoom('WASH_F_R')} className="cursor-pointer group">
+              <rect x="740" y="330" width="40" height="180" fill={startRoom === 'WASH_F_R' ? "#fee2e2" : "#f0a4b4"} stroke={startRoom === 'WASH_F_R' ? "#ef4444" : "#a39a8c"} strokeWidth={startRoom === 'WASH_F_R' ? "3" : "1"} className="transition-all duration-300 group-hover:brightness-110" />
+              <text x="760" y="420" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#333" transform="rotate(-90 760,420)" className="pointer-events-none">FEMALE</text>
+            </g>
+            <g onClick={() => setStartRoom('WASH_M_R')} className="cursor-pointer group">
+              <rect x="780" y="330" width="40" height="180" fill={startRoom === 'WASH_M_R' ? "#fee2e2" : "#a4bbf0"} stroke={startRoom === 'WASH_M_R' ? "#ef4444" : "#a39a8c"} strokeWidth={startRoom === 'WASH_M_R' ? "3" : "1"} className="transition-all duration-300 group-hover:brightness-110" />
+              <text x="800" y="420" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#333" transform="rotate(-90 800,420)" className="pointer-events-none">MALE</text>
+            </g>
           </g>
 
           {/* Rooms */}
@@ -305,6 +375,24 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
             })}
           </g>
 
+          {/* Corner Amenities & Reception */}
+          <g filter="url(#shadow)">
+            <g onClick={() => setStartRoom('LINEN')} className="cursor-pointer group">
+              <rect x="60" y="180" width="100" height="60" fill={startRoom === 'LINEN' ? "#fee2e2" : "#e2dcd0"} stroke={startRoom === 'LINEN' ? "#ef4444" : "#a39a8c"} strokeWidth={startRoom === 'LINEN' ? "3" : "2"} className="transition-all duration-300 group-hover:brightness-110" />
+              <text x="110" y="215" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#555" className="pointer-events-none">LINEN</text>
+            </g>
+            
+            <g onClick={() => setStartRoom('UTILITY')} className="cursor-pointer group">
+              <rect x="1040" y="180" width="100" height="60" fill={startRoom === 'UTILITY' ? "#fee2e2" : "#e2dcd0"} stroke={startRoom === 'UTILITY' ? "#ef4444" : "#a39a8c"} strokeWidth={startRoom === 'UTILITY' ? "3" : "2"} className="transition-all duration-300 group-hover:brightness-110" />
+              <text x="1090" y="215" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#555" className="pointer-events-none">UTILITY</text>
+            </g>
+            
+            <g onClick={() => setStartRoom('RECEPTION')} className="cursor-pointer group">
+              <rect x="500" y="660" width="200" height="100" fill={startRoom === 'RECEPTION' ? "#fee2e2" : "#d1ccc0"} stroke={startRoom === 'RECEPTION' ? "#ef4444" : "#a39a8c"} strokeWidth={startRoom === 'RECEPTION' ? "3" : "2"} className="transition-all duration-300 group-hover:brightness-110" />
+              <text x="600" y="715" textAnchor="middle" fontSize="16" fontWeight="bold" fill="#333" className="pointer-events-none">RECEPTION DESK</text>
+            </g>
+          </g>
+
           {/* Emergency Exit Stairwells */}
           <g filter="url(#shadow)">
             {exits.map(e => (
@@ -316,11 +404,25 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
             ))}
           </g>
 
-          {/* Corridor Hollow Area overlay (to show corridor shape, not actually filled) */}
-          <path d="M 160 180 L 1040 180 L 1040 260 L 160 260 Z" fill="rgba(0,0,0,0.02)" className="pointer-events-none" />
-          <path d="M 160 560 L 1040 560 L 1040 640 L 160 640 Z" fill="rgba(0,0,0,0.02)" className="pointer-events-none" />
-          <path d="M 160 260 L 260 260 L 260 560 L 160 560 Z" fill="rgba(0,0,0,0.02)" className="pointer-events-none" />
-          <path d="M 940 260 L 1040 260 L 1040 560 L 940 560 Z" fill="rgba(0,0,0,0.02)" className="pointer-events-none" />
+          {/* Blockages */}
+          <g>
+            {/* Top Right Corridor Fire */}
+            <rect x="845" y="180" width="30" height="60" fill="url(#diagonalHatch)" stroke="#dc2626" strokeWidth="2" />
+            <rect x="845" y="180" width="30" height="60" fill="rgba(220, 38, 38, 0.1)" />
+            <text x="860" y="210" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#dc2626">FIRE</text>
+            <text x="860" y="222" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#dc2626">BLOCK</text>
+
+            {/* Bottom Left Obstruction */}
+            <rect x="290" y="600" width="20" height="60" fill="url(#diagonalHatch)" stroke="#dc2626" strokeWidth="2" />
+            <rect x="290" y="600" width="20" height="60" fill="rgba(220, 38, 38, 0.1)" />
+            <path d="M 292 605 L 308 655 M 308 605 L 292 655" stroke="#dc2626" strokeWidth="2" />
+          </g>
+
+          {/* Corridor Hollow Area overlay (shows corridor shape, not actually filled) */}
+          <path 
+            d="M 160 180 h 880 v 480 h -880 Z M 220 240 h 760 v 360 h -760 Z" 
+            fill="rgba(0,0,0,0.03)" fillRule="evenodd" className="pointer-events-none" 
+          />
 
           {/* Evacuation Route path */}
           {pathD && (
@@ -364,36 +466,35 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
       `}} />
       
       {/* Legend overlays */}
-      <div className="absolute bottom-6 right-6 flex flex-col gap-4 pointer-events-none">
-        {/* Key Info */}
-        <div className="bg-white p-4 shadow-xl border border-slate-200 rounded-sm w-64">
-          <h3 className="font-bold text-slate-800 text-sm uppercase tracking-widest mb-3 border-b pb-2">Calculation Results</h3>
-          <div className="flex items-start gap-3 mb-4">
-            <div className="bg-emerald-600 p-1.5 rounded">
-              <Footprints className="w-5 h-5 text-white" />
+      <div className="absolute bottom-3 right-3 flex flex-col gap-3 pointer-events-none">
+        <div className="bg-white/95 backdrop-blur-sm p-3 shadow-xl border border-slate-200 rounded-sm w-52">
+          <h3 className="font-bold text-slate-800 text-xs uppercase tracking-widest mb-2 border-b pb-1.5">Calculation Results</h3>
+          <div className="flex items-start gap-2 mb-2.5">
+            <div className="bg-emerald-600 p-1 rounded">
+              <Footprints className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-800">Nearest Exit</p>
-              <p className="text-xs text-emerald-700 font-bold">{activeExitId === 'EXIT_A' ? 'Emergency Exit A (Left)' : activeExitId === 'EXIT_B' ? 'Emergency Exit B (Right)' : 'Select Room'}</p>
+              <p className="text-xs font-bold text-slate-800">Nearest Exit</p>
+              <p className="text-[10px] leading-tight text-emerald-700 font-bold">{activeExitId === 'EXIT_A' ? 'Emergency Exit A (Left)' : activeExitId === 'EXIT_B' ? 'Emergency Exit B (Right)' : 'Select Room'}</p>
             </div>
           </div>
-          <div className="border-t pt-3 flex justify-between">
+          <div className="border-t pt-2 flex justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-800">Distance</p>
-              <p className="text-sm text-slate-600">{distMeters} m</p>
+              <p className="text-[10px] font-bold text-slate-800">Distance</p>
+              <p className="text-xs text-slate-600">{distMeters} m</p>
             </div>
             <div className="text-right">
-              <p className="text-xs font-bold text-slate-800">Est. Time</p>
-              <p className="text-sm text-slate-600">~ {timeSecs} sec</p>
+              <p className="text-[10px] font-bold text-slate-800">Est. Time</p>
+              <p className="text-xs text-slate-600">~ {timeSecs} sec</p>
             </div>
           </div>
         </div>
       </div>
       
       {/* Legend Left */}
-      <div className="absolute bottom-6 left-4 bg-white p-4 shadow-xl border border-slate-200 rounded-sm w-48 pointer-events-none">
-        <h3 className="font-bold text-slate-800 text-sm uppercase tracking-widest mb-3 border-b pb-2 text-center">Legend</h3>
-        <div className="space-y-3">
+      <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm p-3 shadow-xl border border-slate-200 rounded-sm w-40 pointer-events-none">
+        <h3 className="font-bold text-slate-800 text-xs uppercase tracking-widest mb-2 border-b pb-1.5 text-center">Legend</h3>
+        <div className="space-y-2.5">
           <div className="flex items-center gap-3">
             <div className="w-6 h-4 bg-[#fcf8f2] border border-[#a39a8c]"></div>
             <span className="text-xs font-medium text-slate-700">Guest Room</span>
@@ -405,6 +506,17 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
           <div className="flex items-center gap-3">
             <div className="w-6 h-2 border-t-[3px] border-dashed border-emerald-500"></div>
             <span className="text-xs font-medium text-slate-700">Evacuation Route</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-4 bg-red-100 border border-red-500 flex items-center justify-center overflow-hidden">
+              <svg width="24" height="16" className="opacity-50">
+                <pattern id="diag" width="4" height="4" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+                  <line x1="0" y1="0" x2="0" y2="4" stroke="#dc2626" strokeWidth="1" />
+                </pattern>
+                <rect width="24" height="16" fill="url(#diag)" />
+              </svg>
+            </div>
+            <span className="text-xs font-medium text-slate-700">Blocked / Hazard</span>
           </div>
         </div>
       </div>
