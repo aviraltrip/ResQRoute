@@ -8,8 +8,10 @@ export type Triage = {
 
 const VALID: DistressCategory[] = ["medical", "mobility", "fire_exposure", "structural", "panic"];
 
-const SYSTEM_PROMPT = `You triage trapped-hotel-guest distress messages for first responders. Reply with JSON only — no prose, no markdown.
-Schema: {"severity": 1-5 integer, "category": "medical"|"mobility"|"fire-exposure"|"structural"|"panic", "summary": "one short sentence under 20 words for a firefighter, lead with location/injury/hazard"}.
+const SYSTEM_PROMPT = `You triage trapped-hotel-guest distress messages for first responders.
+The transcript may be in English, Hindi, or Kannada. You MUST translate any non-English text to English. The summary MUST be exclusively in English.
+Reply with JSON only — no prose, no markdown.
+Schema: {"severity": 1-5 integer, "category": "medical"|"mobility"|"fire_exposure"|"structural"|"panic", "summary": "one short sentence under 20 words for a firefighter, lead with location/injury/hazard"}.
 Severity rubric: 5 = life-threatening now, 4 = serious injury or imminent danger, 3 = trapped but stable, 2 = uncomfortable, 1 = minor concern.`;
 
 function normalizeCategory(raw: unknown): DistressCategory {

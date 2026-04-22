@@ -113,64 +113,6 @@ export async function triggerAlarm(originRoomId: string, type: IncidentType) {
     });
   }
 
-  // Auto-Dispatch SMS Notification
-  const latestMessage = await prisma.distressMessage.findFirst({
-    where: { roomId: room.id },
-    orderBy: { createdAt: "desc" },
-    include: {
-      guest: true,
-      room: { include: { hotel: true } },
-    },
-  });
-
-  if (latestMessage && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
-    const hotelName = latestMessage.room.hotel.name;
-    const roomNumber = latestMessage.room.number;
-    const floor = latestMessage.room.floor;
-    const guestName = latestMessage.guest.name;
-    const severity = latestMessage.severity ?? "?";
-    const category = latestMessage.category ?? "unknown";
-    const description = latestMessage.summary || latestMessage.text;
-
-    const smsBody =
-      `[RESQROUTE DISPATCH]\n` +
-      `Hotel: ${hotelName}\n` +
-      `Guest: ${guestName}\n` +
-      `Room: ${roomNumber} (Floor ${floor})\n` +
-      `Severity: ${severity}/5  |  Category: ${category}\n` +
-      `Problem: ${description}`;
-
-    try {
-      const twilio = (await import('twilio')).default;
-      const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-      await client.messages.create({
-        body: smsBody.slice(0, 1500),
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: '+91 6363640564'
-      });
-      console.log("Sent Dispatch SMS to +91 6363640564");
-
-      const escapeXml = (s: string) =>
-        s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
-      const spokenLine = `Emergency dispatch from ${hotelName}. Guest ${guestName} in room ${roomNumber}, floor ${floor}, reports: ${description}. Severity ${severity} of 5. Category ${String(category).replace(/_/g, " ")}.`;
-      const twiml =
-        `<Response>` +
-        `<Say voice="alice">${escapeXml(spokenLine)}</Say>` +
-        `<Pause length="1"/>` +
-        `<Say voice="alice">${escapeXml("Repeat. " + spokenLine)}</Say>` +
-        `</Response>`;
-
-      await client.calls.create({
-        twiml,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: '+91 6363640564'
-      });
-      console.log("Placed Dispatch Voice Call to +91 6363640564");
-    } catch (err) {
-      console.error("Twilio dispatch failed:", err);
-    }
-  }
-
   revalidatePath("/staff");
   return incident;
 }
@@ -224,7 +166,7 @@ export async function submitVoiceDistress(guestToken: string, formData: FormData
     body: JSON.stringify({
       audio_url: upload_url,
       speech_models: ["universal"],
-      language_code: "en",
+      language_detection: true,
     }),
   });
   if (!createRes.ok) {
