@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { IncidentType } from "@prisma/client";
+import { triageDistress } from "@/lib/openrouter";
 
 export async function checkInGuest(formData: FormData) {
   const name = formData.get("name") as string;
@@ -107,9 +108,7 @@ export async function submitVoiceDistress(guestToken: string, formData: FormData
   if (!guest) throw new Error("Guest not found");
 
   const assemblyKey = process.env.ASSEMBLYAI_API_KEY;
-  const openrouterKey = process.env.OPENROUTER_API_KEY;
   if (!assemblyKey) throw new Error("ASSEMBLYAI_API_KEY missing");
-  if (!openrouterKey) throw new Error("OPENROUTER_API_KEY missing");
 
   const audioBuffer = Buffer.from(await file.arrayBuffer());
 
@@ -164,29 +163,7 @@ export async function submitVoiceDistress(guestToken: string, formData: FormData
   }
   if (!transcript) throw new Error("Transcription timed out");
 
-  const summaryRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${openrouterKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "openai/gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an emergency triage assistant for hotel staff. Summarize the guest's distress message in ONE short sentence under 20 words. Lead with location/injury/hazard and what they need. No preamble, no quotes.",
-        },
-        { role: "user", content: transcript },
-      ],
-    }),
-  });
-  if (!summaryRes.ok) throw new Error(`OpenRouter failed: ${summaryRes.status}`);
-  const summaryJson = (await summaryRes.json()) as {
-    choices?: { message?: { content?: string } }[];
-  };
-  const summary = summaryJson.choices?.[0]?.message?.content?.trim() || transcript;
+  const triage = await triageDistress(transcript);
 
   let incident = await prisma.incident.findFirst({ orderBy: { startedAt: "desc" } });
   if (!incident) {
@@ -206,12 +183,52 @@ export async function submitVoiceDistress(guestToken: string, formData: FormData
       guestId: guest.id,
       roomId: guest.roomId,
       text: transcript,
-      summary,
-      severity: 5,
-      category: "panic",
+      summary: triage.summary,
+      severity: triage.severity,
+      category: triage.category,
     },
   });
 
   revalidatePath("/staff");
-  return { transcript, summary };
+  return { transcript, summary: triage.summary, severity: triage.severity, category: triage.category };
+}
+
+export async function submitTextDistress(guestToken: string, text: string) {
+  const trimmed = text.trim();
+  if (!trimmed) throw new Error("Message is empty");
+
+  const guest = await prisma.guest.findUnique({
+    where: { token: guestToken },
+    include: { room: true },
+  });
+  if (!guest) throw new Error("Guest not found");
+
+  const triage = await triageDistress(trimmed);
+
+  let incident = await prisma.incident.findFirst({ orderBy: { startedAt: "desc" } });
+  if (!incident) {
+    incident = await prisma.incident.create({
+      data: {
+        hotelId: guest.room.hotelId,
+        type: "security",
+        originRoomId: guest.roomId,
+        isDrill: false,
+      },
+    });
+  }
+
+  await prisma.distressMessage.create({
+    data: {
+      incidentId: incident.id,
+      guestId: guest.id,
+      roomId: guest.roomId,
+      text: trimmed,
+      summary: triage.summary,
+      severity: triage.severity,
+      category: triage.category,
+    },
+  });
+
+  revalidatePath("/staff");
+  return { transcript: trimmed, summary: triage.summary, severity: triage.severity, category: triage.category };
 }
