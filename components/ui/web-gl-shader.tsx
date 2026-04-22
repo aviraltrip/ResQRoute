@@ -1,0 +1,179 @@
+"use client"
+
+import { useEffect, useRef } from "react"
+import * as THREE from "three"
+
+export function WebGLShader() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const sceneRef = useRef<{
+    scene: THREE.Scene | null
+    camera: THREE.OrthographicCamera | null
+    renderer: THREE.WebGLRenderer | null
+    mesh: THREE.Mesh | null
+    uniforms: any
+    animationId: number | null
+  }>({
+    scene: null,
+    camera: null,
+    renderer: null,
+    mesh: null,
+    uniforms: null,
+    animationId: null,
+  })
+
+  useEffect(() => {
+    if (!canvasRef.current) return
+
+    const canvas = canvasRef.current
+    const { current: refs } = sceneRef
+
+    const vertexShader = `
+      attribute vec3 position;
+      void main() {
+        gl_Position = vec4(position, 1.0);
+      }
+    `
+
+    const fragmentShader = `
+      precision highp float;
+      uniform vec2 resolution;
+      uniform float time;
+
+      // Stable EKG function with varying spike heights
+      float ekg(float x) {
+          // Adjust time speed
+          float t = time * 2.0;
+          float pos = x - t;
+          
+          // Divide into repeating segments
+          float segment = floor(pos / 3.0);
+          float p = fract(pos / 3.0);
+          
+          // Pseudo-random height for the main spike
+          float h = 0.5 + 0.8 * fract(sin(segment * 12.9898) * 43758.5453);
+          
+          // P wave (small bump before)
+          float p_wave = 0.1 * exp(-pow((p - 0.25) * 25.0, 2.0));
+          
+          // Q wave (small dip)
+          float q_wave = -0.15 * exp(-pow((p - 0.42) * 80.0, 2.0));
+          
+          // R wave (main tall spike, randomly varying height)
+          float r_wave = h * exp(-pow((p - 0.48) * 100.0, 2.0));
+          
+          // S wave (deep dip)
+          float s_wave = -0.3 * h * exp(-pow((p - 0.54) * 80.0, 2.0));
+          
+          // T wave (small bump after)
+          float t_wave = 0.15 * exp(-pow((p - 0.75) * 15.0, 2.0));
+          
+          return p_wave + q_wave + r_wave + s_wave + t_wave;
+      }
+
+      void main() {
+        vec2 uv = gl_FragCoord.xy / resolution.xy;
+        uv = uv * 2.0 - 1.0;
+        uv.x *= resolution.x / resolution.y;
+
+        float scaledX = uv.x * 2.5;
+        float curveY = ekg(scaledX);
+        
+        // Distance to the curve
+        float dist = abs(uv.y - curveY);
+        
+        // Stable, crisp line
+        float line = smoothstep(0.015, 0.005, dist);
+        
+        // Vibrant glow
+        float glow = 0.02 / (dist + 0.005);
+        
+        float intensity = line + glow;
+        
+        // Highly vibrant red color
+        vec3 color = vec3(1.0, 0.0, 0.15); 
+        
+        gl_FragColor = vec4(color * intensity, intensity);
+      }
+    `
+
+    const initScene = () => {
+      refs.scene = new THREE.Scene()
+      refs.renderer = new THREE.WebGLRenderer({ canvas, alpha: true })
+      refs.renderer.setPixelRatio(window.devicePixelRatio)
+      refs.renderer.setClearColor(0x000000, 0) // Transparent background
+
+      refs.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, -1)
+
+      refs.uniforms = {
+        resolution: { value: [window.innerWidth, window.innerHeight] },
+        time: { value: 0.0 },
+      }
+
+      const position = [
+        -1.0, -1.0, 0.0,
+         1.0, -1.0, 0.0,
+        -1.0,  1.0, 0.0,
+         1.0, -1.0, 0.0,
+        -1.0,  1.0, 0.0,
+         1.0,  1.0, 0.0,
+      ]
+
+      const positions = new THREE.BufferAttribute(new Float32Array(position), 3)
+      const geometry = new THREE.BufferGeometry()
+      geometry.setAttribute("position", positions)
+
+      const material = new THREE.RawShaderMaterial({
+        vertexShader,
+        fragmentShader,
+        uniforms: refs.uniforms,
+        side: THREE.DoubleSide,
+        transparent: true,
+      })
+
+      refs.mesh = new THREE.Mesh(geometry, material)
+      refs.scene.add(refs.mesh)
+
+      handleResize()
+    }
+
+    const animate = () => {
+      if (refs.uniforms) refs.uniforms.time.value += 0.01
+      if (refs.renderer && refs.scene && refs.camera) {
+        refs.renderer.render(refs.scene, refs.camera)
+      }
+      refs.animationId = requestAnimationFrame(animate)
+    }
+
+    const handleResize = () => {
+      if (!refs.renderer || !refs.uniforms) return
+      const width = window.innerWidth
+      const height = window.innerHeight
+      refs.renderer.setSize(width, height, false)
+      refs.uniforms.resolution.value = [width, height]
+    }
+
+    initScene()
+    animate()
+    window.addEventListener("resize", handleResize)
+
+    return () => {
+      if (refs.animationId) cancelAnimationFrame(refs.animationId)
+      window.removeEventListener("resize", handleResize)
+      if (refs.mesh) {
+        refs.scene?.remove(refs.mesh)
+        refs.mesh.geometry.dispose()
+        if (refs.mesh.material instanceof THREE.Material) {
+          refs.mesh.material.dispose()
+        }
+      }
+      refs.renderer?.dispose()
+    }
+  }, [])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="fixed top-0 left-0 w-full h-full block z-0 pointer-events-none opacity-20"
+    />
+  )
+}
