@@ -4,6 +4,9 @@ export type RouteStep = {
   roomId: string;
   roomNumber: string;
   isExit: boolean;
+  x: number;
+  y: number;
+  floor: number;
 };
 
 export async function computeEvacuationRoute(
@@ -22,15 +25,31 @@ export async function computeEvacuationRoute(
   // Initialize graph nodes
   rooms.forEach(r => { graph[r.id] = []; });
   
+  const roomsById = new Map(rooms.map(r => [r.id, r]));
+
   // Populate edges
   edges.forEach(e => {
     // avoid edges pointing into hazards
     if (avoidRoomIds.includes(e.toRoomId)) return;
     
+    const fromRoom = roomsById.get(e.fromRoomId);
+    const toRoom = roomsById.get(e.toRoomId);
+
+    if (!fromRoom || !toRoom) return;
+
+    // Calculate dynamic weight using Euclidean distance formula
+    const euclideanDistance = Math.sqrt(
+      Math.pow(toRoom.x - fromRoom.x, 2) + Math.pow(toRoom.y - fromRoom.y, 2)
+    );
+
+    // Add a penalty for moving between floors (simulating stair difficulty)
+    const floorDiff = Math.abs(toRoom.floor - fromRoom.floor);
+    const dynamicWeight = euclideanDistance + (floorDiff * 3);
+
     // Graph is bi-directional but Prisma schema stored both directions if it's undirected.
     // The seed.ts explicitly created (A->B) and (B->A).
     if (!graph[e.fromRoomId]) graph[e.fromRoomId] = [];
-    graph[e.fromRoomId].push({ to: e.toRoomId, weight: e.weight });
+    graph[e.fromRoomId].push({ to: e.toRoomId, weight: dynamicWeight });
   });
 
   // We want to avoid the origin hazard room completely if it's not our start room
@@ -108,7 +127,14 @@ export async function computeEvacuationRoute(
   
   while (step) {
     const room = rooms.find(r => r.id === step)!;
-    path.unshift({ roomId: room.id, roomNumber: room.number, isExit: room.isExit });
+    path.unshift({ 
+      roomId: room.id, 
+      roomNumber: room.number, 
+      isExit: room.isExit,
+      x: room.x,
+      y: room.y,
+      floor: room.floor
+    });
     step = prev[step];
   }
 

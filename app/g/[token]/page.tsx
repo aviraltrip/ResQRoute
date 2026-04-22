@@ -5,6 +5,8 @@ import GuestActionButtons from "@/components/GuestActionButtons";
 import VoiceDistress from "@/components/VoiceDistress";
 import { prisma } from "@/lib/prisma";
 import { computeEvacuationRoute } from "@/lib/routing";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import EvacuationMap from "@/components/EvacuationMap";
 
 export default async function GuestView({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -21,6 +23,10 @@ export default async function GuestView({ params }: { params: Promise<{ token: s
 
   const hazardRooms = incident ? [incident.originRoomId] : [];
   const route = await computeEvacuationRoute(guest.roomId, hazardRooms);
+  
+  const floorRooms = await prisma.room.findMany({
+    where: { floor: guest.room.floor }
+  });
   
   return (
     <div className="min-h-screen bg-slate-950 font-sans flex items-center justify-center p-0 sm:p-6">
@@ -57,9 +63,22 @@ export default async function GuestView({ params }: { params: Promise<{ token: s
                 <Map className="w-5 h-5 text-blue-400" />
                 <h2 className="font-semibold text-white">Live Safe Route</h2>
               </div>
-              <div className="px-2 py-1 bg-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-widest rounded-full">
-                Updating
-              </div>
+              <Dialog>
+                <DialogTrigger 
+                  render={
+                    <Button variant="outline" size="sm" className="bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20 hover:text-blue-300 h-7 text-xs px-3" />
+                  }
+                >
+                  View Evac Plan
+                </DialogTrigger>
+                <DialogContent className="max-w-[95vw] sm:max-w-[800px] h-[80vh] p-0 bg-slate-950 border-slate-800 overflow-hidden flex flex-col">
+                  <div className="sr-only">
+                    <DialogTitle>Nearest Evacuation Plan</DialogTitle>
+                    <DialogDescription>Interactive map showing the nearest evacuation route.</DialogDescription>
+                  </div>
+                  <EvacuationMap route={route} floorRooms={floorRooms} currentFloor={guest.room.floor} />
+                </DialogContent>
+              </Dialog>
             </div>
             
             <div className="p-5">
