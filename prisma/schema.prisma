@@ -33,6 +33,8 @@ enum DistressCategory {
 model Hotel {
   id        String     @id @default(cuid())
   name      String
+  latitude  Float      @default(42.3601)
+  longitude Float      @default(-71.0589)
   rooms     Room[]
   incidents Incident[]
   createdAt DateTime   @default(now())

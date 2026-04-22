@@ -21,7 +21,7 @@ export default function CheckInForm({ rooms }: { rooms: Room[] }) {
 
   return (
     <div className="w-full max-w-md mx-auto bg-white rounded-2xl overflow-hidden shadow-sm relative border border-zinc-200">
-      
+
       <div className="p-8 pb-6 border-b border-zinc-100">
         <h2 className="text-2xl font-bold text-zinc-900 flex items-center gap-3 tracking-tight">
           <DoorOpen className="w-6 h-6 text-blue-600" /> Self Check-In Kiosk
