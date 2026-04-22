@@ -126,7 +126,7 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
               ) : distress.map(d => (
                 <div key={d.id} className="bg-black/40 border-l-2 border-red-500 p-3 rounded-r-lg text-sm relative">
                   <div className="text-[10px] text-slate-500 mb-1.5 font-mono tracking-wider">RM {d.room.number}</div>
-                  <p className="text-slate-300">"{d.text}"</p>
+                  <p className="text-slate-300">&ldquo;{d.text}&rdquo;</p>
                   <div className="absolute top-3 right-3 text-[10px] text-red-500 font-bold uppercase tracking-widest">{d.category}</div>
                 </div>
               ))}

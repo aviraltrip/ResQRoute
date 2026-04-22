@@ -107,7 +107,7 @@ export default async function GuestView({ params }: { params: Promise<{ token: s
 
             <div className="w-full bg-black/50 p-3 rounded-xl border border-white/5 text-left">
               <p className="text-sm text-neutral-300 italic font-medium leading-relaxed">
-                "The hallway is currently blocked by fallen debris, please send help!"
+                &ldquo;The hallway is currently blocked by fallen debris, please send help!&rdquo;
               </p>
             </div>
           </section>

@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { IncidentType } from "@prisma/client";
 
 export async function checkInGuest(formData: FormData) {
   const name = formData.get("name") as string;
@@ -69,7 +70,7 @@ export async function triggerDistress(guestToken: string, text: string) {
   return message;
 }
 
-export async function triggerAlarm(originRoomId: string, type: string) {
+export async function triggerAlarm(originRoomId: string, type: IncidentType) {
   const room = await prisma.room.findUnique({ where: { id: originRoomId } });
   if (!room) throw new Error("Invalid room");
 

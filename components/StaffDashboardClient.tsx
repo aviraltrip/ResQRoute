@@ -5,34 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle2, Siren, HelpCircle, Activity, User, Maximize2, ShieldAlert } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { Guest, DistressMessage, Room, IncidentType } from "@prisma/client";
 
-type Guest = {
-  id: string;
-  name: string;
-  roomId: string;
-  status: string;
-  room?: {
-    number: string;
-  };
+type GuestWithRoom = Guest & {
+  room?: Room;
 };
 
-type DistressMessage = {
-  id: string;
-  text: string;
-  severity: number;
-  category: string;
-  roomId: string;
-  guestId: string;
-};
-
-type Room = {
-  id: string;
-  number: string;
-  floor: number;
-};
-
-export default function StaffDashboardClient({ initialGuests, initialMessages, rooms }: { initialGuests: Guest[], initialMessages: DistressMessage[], rooms: Room[] }) {
-  const [guests, setGuests] = useState(initialGuests);
+export default function StaffDashboardClient({ initialGuests, initialMessages, rooms }: { initialGuests: GuestWithRoom[], initialMessages: DistressMessage[], rooms: Room[] }) {
+  const [guests, setGuests] = useState<GuestWithRoom[]>(initialGuests);
   const [messages, setMessages] = useState(initialMessages);
   const [loadingAction, setLoadingAction] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState("");
@@ -42,14 +22,14 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
     const guestSub = supabase
       .channel('public:Guest')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Guest' }, (payload) => {
-        const newGuest = payload.new as Guest;
+        const newGuest = payload.new as GuestWithRoom;
         // Lookup room number from the passed rooms array
         const r = rooms.find(room => room.id === newGuest.roomId);
         if (r) newGuest.room = r;
         setGuests((prev) => [...prev, newGuest]);
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'Guest' }, (payload) => {
-        const updatedGuest = payload.new as Guest;
+        const updatedGuest = payload.new as GuestWithRoom;
         setGuests((prev) => prev.map(g => g.id === updatedGuest.id ? { ...g, ...updatedGuest } : g));
       })
       .subscribe();
@@ -114,7 +94,7 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
               onClick={async () => {
                 setLoadingAction(true);
                 const { triggerAlarm } = await import("@/app/actions");
-                await triggerAlarm(selectedRoom, "fire");
+                await triggerAlarm(selectedRoom, IncidentType.fire);
                 window.location.href = "/helpline";
               }}
               className="bg-red-600 hover:bg-red-500 text-white rounded-none border-0 shadow-[0_0_20px_rgba(220,38,38,0.4)] h-full"
@@ -203,7 +183,7 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
                       Sev {msg.severity}
                     </Badge>
                   </div>
-                  <p className="text-slate-200 font-bold text-sm leading-relaxed mb-3">"{msg.text}"</p>
+                  <p className="text-slate-200 font-bold text-sm leading-relaxed mb-3">&ldquo;{msg.text}&rdquo;</p>
                   <div className="flex justify-end">
                     <span className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">{msg.category}</span>
                   </div>

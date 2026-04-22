@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function StaffDashboard() {
   // Fetch initial active state for Staff
   const guests = await prisma.guest.findMany({
+    include: { room: true },
     orderBy: { updatedAt: 'desc' }
   });
   
