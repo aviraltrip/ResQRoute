@@ -15,7 +15,7 @@ export type Helpline = {
 const KIND_LABEL: Record<HelplineKind, string> = {
   fire_station: "Fire Station",
   hospital: "Hospital",
-  police: "Police",
+  police: "Police Station",
 };
 
 export function helplineLabel(kind: HelplineKind) {
