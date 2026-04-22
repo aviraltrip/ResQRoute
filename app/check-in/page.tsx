@@ -1,10 +1,19 @@
 import React from "react";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import CheckInForm from "@/components/CheckInForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function CheckInPage() {
+  const cookieStore = await cookies();
+  const existingToken = cookieStore.get("resq_guest_token")?.value;
+  if (existingToken) {
+    const existing = await prisma.guest.findUnique({ where: { token: existingToken } });
+    if (existing) redirect(`/g/${existing.token}`);
+  }
+
   const rooms = await prisma.room.findMany({
     orderBy: { number: 'asc' }
   });

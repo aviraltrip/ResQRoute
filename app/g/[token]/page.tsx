@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic, Map, ShieldCheck, AlertTriangle, ArrowRight, ActivitySquare, AlertOctagon } from "lucide-react";
+import { Mic, Map, ShieldCheck, AlertTriangle, ArrowRight, ActivitySquare, AlertOctagon, LogOut } from "lucide-react";
 import GuestActionButtons from "@/components/GuestActionButtons";
 import VoiceDistress from "@/components/VoiceDistress";
+import { signOutGuest } from "@/app/actions";
 import { prisma } from "@/lib/prisma";
 import { computeEvacuationRoute } from "@/lib/routing";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -39,14 +40,26 @@ export default async function GuestView({ params }: { params: Promise<{ token: s
 
         {/* Header */}
         <header className="px-6 pt-10 pb-6 bg-gradient-to-b from-red-950/80 to-transparent z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-red-500/20 p-2 rounded-xl animate-pulse">
-              <AlertTriangle className="w-6 h-6 text-red-500" />
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex items-center gap-3">
+              <div className="bg-red-500/20 p-2 rounded-xl animate-pulse">
+                <AlertTriangle className="w-6 h-6 text-red-500" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold tracking-tight text-white uppercase">Emergency</h1>
+                <p className="text-red-400 font-medium text-sm">Evacuate Immediately</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-white uppercase">Emergency</h1>
-              <p className="text-red-400 font-medium text-sm">Evacuate Immediately</p>
-            </div>
+            <form action={signOutGuest}>
+              <button
+                type="submit"
+                title="Sign out (check out)"
+                className="text-[10px] uppercase tracking-widest font-bold text-neutral-400 hover:text-white flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-white/5 transition-colors"
+              >
+                <LogOut className="w-3 h-3" />
+                Sign out
+              </button>
+            </form>
           </div>
         </header>
 

@@ -3,8 +3,12 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { IncidentType } from "@prisma/client";
 import { triageDistress } from "@/lib/openrouter";
+
+const GUEST_COOKIE = "resq_guest_token";
+const GUEST_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
 export async function checkInGuest(formData: FormData) {
   const name = formData.get("name") as string;
@@ -37,8 +41,22 @@ export async function checkInGuest(formData: FormData) {
     });
   }
 
+  const cookieStore = await cookies();
+  cookieStore.set(GUEST_COOKIE, guest.token, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: GUEST_COOKIE_MAX_AGE,
+  });
+
   // Redirect client to their dashboard
   redirect(`/g/${guest.token}`);
+}
+
+export async function signOutGuest() {
+  const cookieStore = await cookies();
+  cookieStore.delete(GUEST_COOKIE);
+  redirect("/check-in");
 }
 
 export async function triggerDistress(guestToken: string, text: string) {
