@@ -65,9 +65,10 @@ export default function CheckInForm({ rooms }: { rooms: Room[] }) {
           <select 
             name="roomId"
             required
+            defaultValue=""
             className="w-full bg-slate-900 border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all appearance-none cursor-pointer"
           >
-            <option value="" disabled selected>Select an available room</option>
+            <option value="" disabled>Select an available room</option>
             {rooms.filter(r => !r.number.includes("EXIT") && !r.number.includes("LOBBY")).map((room) => (
               <option key={room.id} value={room.id}>
                 Room {room.number} (Floor {room.floor})
