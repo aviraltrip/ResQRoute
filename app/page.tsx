@@ -17,7 +17,7 @@ export default async function DemoPortal() {
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center bg-white overflow-x-hidden font-sans">
       <WebGLShader />
-      
+
       {/* Navbar / Header */}
       <header className="w-full flex items-center justify-between p-6 max-w-6xl mx-auto z-10">
         <div className="flex items-center gap-2">
@@ -30,7 +30,7 @@ export default async function DemoPortal() {
 
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 pt-16 pb-24 w-full max-w-4xl mx-auto">
-        
+
         {/* Badge */}
         <div className="mb-8 flex items-center justify-center gap-2 px-4 py-1.5 rounded-full border border-zinc-200 bg-white shadow-sm">
           <span className="relative flex h-2 w-2 items-center justify-center">
@@ -39,17 +39,17 @@ export default async function DemoPortal() {
           </span>
           <p className="text-xs text-zinc-500 font-medium">Next Generation Emergency Platform</p>
         </div>
-        
+
         {/* Title */}
         <h1 className="mb-6 text-zinc-900 text-center text-5xl sm:text-7xl font-extrabold tracking-tighter md:text-[clamp(3rem,8vw,6rem)] leading-tight">
-          Instant.<span className="text-red-600 italic pr-1">Help</span> When It<br/>Matters Most
+          Instant.<span className="text-red-600 italic pr-1">Help</span> When It<br />Matters Most
         </h1>
-        
+
         {/* Subtitle */}
         <p className="text-zinc-500 px-6 text-center text-sm md:text-lg max-w-2xl mb-12">
           From live triage to room-by-room evacuation, ResQRoute delivers the real-time clarity that saves lives in the first critical minutes.
         </p>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl mx-auto mb-16">
           {/* Staff Dashboard Link */}
           <Link href="/staff" className="group relative p-[1px] rounded-[24px] overflow-hidden focus:outline-none focus:ring-4 focus:ring-blue-500/50">
@@ -85,7 +85,7 @@ export default async function DemoPortal() {
             </div>
           </Link>
         </div>
-        
+
         {/* Check-in section */}
         <div className="w-full max-w-2xl mt-8 pt-12 border-t border-zinc-100 flex flex-col items-center">
           <p className="text-sm font-medium text-zinc-400 mb-6 uppercase tracking-widest">Simulate Guest Devices</p>
