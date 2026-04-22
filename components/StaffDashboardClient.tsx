@@ -51,10 +51,12 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
 
   const stats = {
     safe: guests.filter(g => g.status === 'safe').length,
-    trapped: guests.filter(g => g.status === 'trapped').length + messages.length, // approximation for demo
+    trapped: guests.filter(g => g.status === 'trapped' || (messages.some(m => m.guestId === g.id) && g.status !== 'safe')).length,
     evacuating: guests.filter(g => g.status === 'evacuating').length,
-    checked_in: guests.filter(g => g.status === 'checked_in').length,
+    checked_in: guests.filter(g => g.status === 'checked_in' && !messages.some(m => m.guestId === g.id)).length,
   };
+
+  const activeMessages = messages.filter(msg => guests.find(g => g.id === msg.guestId)?.status !== 'safe');
 
   return (
     <div className="min-h-screen bg-[#0a0a0e] text-slate-100 flex flex-col font-sans overflow-hidden">
@@ -144,6 +146,19 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
                      }`}>
                        {guest.status === 'checked_in' ? 'Checked In' : guest.status === 'safe' ? 'Safe' : 'Unsafe / Danger'}
                      </Badge>
+                     {guest.status !== 'safe' && (
+                       <Button 
+                         variant="outline" 
+                         size="sm" 
+                         className="mt-3 w-full bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 border-emerald-500/20 h-auto py-1"
+                         onClick={async () => {
+                           const { markGuestSafe } = await import('@/app/actions');
+                           await markGuestSafe(guest.token);
+                         }}
+                       >
+                         Confirm Safe
+                       </Button>
+                     )}
                    </div>
                  ))}
                </div>
@@ -160,17 +175,17 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
                 Live Triage Alerts
               </h2>
               <Badge variant="secondary" className="bg-orange-500/10 text-orange-400 border border-orange-500/20 font-mono animate-pulse">
-                {messages.length} Active
+                {activeMessages.length} Active
               </Badge>
             </div>
             
             <div className="flex-1 overflow-y-auto p-3 space-y-3">
-              {messages.length === 0 && (
+              {activeMessages.length === 0 && (
                 <div className="h-full flex items-center justify-center text-center text-slate-500 text-sm">
                   Waiting for live distress signals... No casualties reported.
                 </div>
               )}
-              {messages.map((msg) => (
+              {activeMessages.map((msg) => (
                 <div 
                   key={msg.id} 
                   onClick={() => window.location.href = `/helpline?roomId=${msg.roomId}`}
