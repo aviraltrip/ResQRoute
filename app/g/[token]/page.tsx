@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mic, Map, ShieldCheck, AlertTriangle, ArrowRight, ActivitySquare, AlertOctagon } from "lucide-react";
 import GuestActionButtons from "@/components/GuestActionButtons";
+import VoiceDistress from "@/components/VoiceDistress";
 import { prisma } from "@/lib/prisma";
 import { computeEvacuationRoute } from "@/lib/routing";
 
@@ -94,23 +95,7 @@ export default async function GuestView({ params }: { params: Promise<{ token: s
           </section>
 
           {/* Distress Intercom Segment */}
-          <section className="bg-neutral-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-5 text-center flex flex-col items-center">
-            <h3 className="font-semibold text-white mb-1">Distress Intercom</h3>
-            <p className="text-xs text-neutral-400 mb-5">Speak directly to responders. AI summarizes your message.</p>
-            
-            <div className="relative w-24 h-24 mb-4 flex items-center justify-center">
-              <div className="absolute inset-0 bg-red-500/20 rounded-full animate-ping" />
-              <button className="relative w-16 h-16 bg-gradient-to-b from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(239,68,68,0.4)] text-white focus:outline-none focus:scale-95 transition-all">
-                <Mic className="w-8 h-8" />
-              </button>
-            </div>
-
-            <div className="w-full bg-black/50 p-3 rounded-xl border border-white/5 text-left">
-              <p className="text-sm text-neutral-300 italic font-medium leading-relaxed">
-                &ldquo;The hallway is currently blocked by fallen debris, please send help!&rdquo;
-              </p>
-            </div>
-          </section>
+          <VoiceDistress token={token} />
 
         </main>
       </div>

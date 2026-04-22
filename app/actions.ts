@@ -95,3 +95,123 @@ export async function markGuestSafe(guestToken: string) {
   revalidatePath("/staff");
   return guest;
 }
+
+export async function submitVoiceDistress(guestToken: string, formData: FormData) {
+  const file = formData.get("audio") as File | null;
+  if (!file) throw new Error("No audio provided");
+
+  const guest = await prisma.guest.findUnique({
+    where: { token: guestToken },
+    include: { room: true },
+  });
+  if (!guest) throw new Error("Guest not found");
+
+  const assemblyKey = process.env.ASSEMBLYAI_API_KEY;
+  const openrouterKey = process.env.OPENROUTER_API_KEY;
+  if (!assemblyKey) throw new Error("ASSEMBLYAI_API_KEY missing");
+  if (!openrouterKey) throw new Error("OPENROUTER_API_KEY missing");
+
+  const audioBuffer = Buffer.from(await file.arrayBuffer());
+
+  const uploadRes = await fetch("https://api.assemblyai.com/v2/upload", {
+    method: "POST",
+    headers: {
+      authorization: assemblyKey,
+      "content-type": "application/octet-stream",
+    },
+    body: audioBuffer,
+  });
+  if (!uploadRes.ok) {
+    const body = await uploadRes.text();
+    throw new Error(`AssemblyAI upload failed: ${uploadRes.status} ${body}`);
+  }
+  const uploadJson = (await uploadRes.json()) as { upload_url?: string };
+  const upload_url = uploadJson.upload_url;
+  if (!upload_url) throw new Error(`AssemblyAI upload returned no url: ${JSON.stringify(uploadJson)}`);
+
+  const createRes = await fetch("https://api.assemblyai.com/v2/transcript", {
+    method: "POST",
+    headers: {
+      authorization: assemblyKey,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      audio_url: upload_url,
+      speech_models: ["universal"],
+      language_code: "en",
+    }),
+  });
+  if (!createRes.ok) {
+    const body = await createRes.text();
+    throw new Error(`AssemblyAI transcript request failed: ${createRes.status} ${body}`);
+  }
+  const createJson = (await createRes.json()) as { id?: string; error?: string };
+  if (!createJson.id) throw new Error(`AssemblyAI transcript missing id: ${JSON.stringify(createJson)}`);
+  const transcriptId = createJson.id;
+
+  let transcript = "";
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    const pollRes = await fetch(`https://api.assemblyai.com/v2/transcript/${transcriptId}`, {
+      headers: { authorization: assemblyKey },
+    });
+    const data = (await pollRes.json()) as { status: string; text?: string; error?: string };
+    if (data.status === "completed") {
+      transcript = data.text || "";
+      break;
+    }
+    if (data.status === "error") throw new Error(`AssemblyAI error: ${data.error}`);
+  }
+  if (!transcript) throw new Error("Transcription timed out");
+
+  const summaryRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${openrouterKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "openai/gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an emergency triage assistant for hotel staff. Summarize the guest's distress message in ONE short sentence under 20 words. Lead with location/injury/hazard and what they need. No preamble, no quotes.",
+        },
+        { role: "user", content: transcript },
+      ],
+    }),
+  });
+  if (!summaryRes.ok) throw new Error(`OpenRouter failed: ${summaryRes.status}`);
+  const summaryJson = (await summaryRes.json()) as {
+    choices?: { message?: { content?: string } }[];
+  };
+  const summary = summaryJson.choices?.[0]?.message?.content?.trim() || transcript;
+
+  let incident = await prisma.incident.findFirst({ orderBy: { startedAt: "desc" } });
+  if (!incident) {
+    incident = await prisma.incident.create({
+      data: {
+        hotelId: guest.room.hotelId,
+        type: "security",
+        originRoomId: guest.roomId,
+        isDrill: false,
+      },
+    });
+  }
+
+  await prisma.distressMessage.create({
+    data: {
+      incidentId: incident.id,
+      guestId: guest.id,
+      roomId: guest.roomId,
+      text: transcript,
+      summary,
+      severity: 5,
+      category: "panic",
+    },
+  });
+
+  revalidatePath("/staff");
+  return { transcript, summary };
+}

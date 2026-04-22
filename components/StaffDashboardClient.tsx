@@ -183,7 +183,10 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
                       Sev {msg.severity}
                     </Badge>
                   </div>
-                  <p className="text-slate-200 font-bold text-sm leading-relaxed mb-3">&ldquo;{msg.text}&rdquo;</p>
+                  <p className="text-slate-200 font-bold text-sm leading-relaxed mb-2">&ldquo;{msg.summary || msg.text}&rdquo;</p>
+                  {msg.summary && msg.text && msg.summary !== msg.text && (
+                    <p className="text-[11px] text-slate-500 italic mb-3 leading-relaxed">Full transcript: {msg.text}</p>
+                  )}
                   <div className="flex justify-end">
                     <span className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">{msg.category}</span>
                   </div>
