@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle2, Siren, HelpCircle, Activity, User, Maximize2, ShieldAlert, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Guest, DistressMessage, Room, IncidentType } from "@prisma/client";
+import PreRegisterDialog from "@/components/PreRegisterDialog";
 
 type GuestWithRoom = Guest & {
   room?: Room;
@@ -87,6 +88,7 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
           </div>
         </div>
         <div className="flex gap-4 items-center">
+          <PreRegisterDialog rooms={rooms} />
           <Button variant="outline" className="border-zinc-200 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 shadow-sm">End Incident</Button>
           
           <div className="flex bg-white border border-red-200 rounded-lg overflow-hidden shadow-sm">
@@ -162,13 +164,18 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
                      <p className="text-sm font-bold text-zinc-900">{guest.name}</p>
                      <p className="text-xs text-slate-500 mb-2">Room {guest.room?.number || 'Unknown'}</p>
                      <Badge variant="outline" className={`border ${
-                        guest.status === 'safe' 
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                          : guest.status === 'checked_in' 
+                        guest.status === 'safe'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : guest.status === 'checked_in'
                             ? 'bg-slate-100 text-slate-600 border-slate-200'
-                            : 'bg-red-50 text-red-700 border-red-200 font-bold'
+                            : guest.status === 'pending_arrival'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              : 'bg-red-50 text-red-700 border-red-200 font-bold'
                      }`}>
-                       {guest.status === 'checked_in' ? 'Checked In' : guest.status === 'safe' ? 'Safe' : 'Unsafe / Danger'}
+                       {guest.status === 'checked_in' ? 'Checked In'
+                         : guest.status === 'safe' ? 'Safe'
+                         : guest.status === 'pending_arrival' ? 'Pending Arrival'
+                         : 'Unsafe / Danger'}
                      </Badge>
                      {guest.status !== 'safe' && (
                        <Button 

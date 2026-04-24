@@ -22,19 +22,19 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 
 const CATEGORY_STYLES: Record<string, string> = {
-  medical: "bg-rose-500/15 text-rose-300 border-rose-500/30",
-  mobility: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-  fire_exposure: "bg-orange-500/15 text-orange-300 border-orange-500/30",
-  structural: "bg-violet-500/15 text-violet-300 border-violet-500/30",
-  panic: "bg-red-500/15 text-red-300 border-red-500/30",
+  medical: "bg-rose-50 text-rose-700 border-rose-200",
+  mobility: "bg-amber-50 text-amber-700 border-amber-200",
+  fire_exposure: "bg-orange-50 text-orange-700 border-orange-200",
+  structural: "bg-violet-50 text-violet-700 border-violet-200",
+  panic: "bg-red-50 text-red-700 border-red-200",
 };
 
 function severityStyle(sev: number) {
-  if (sev >= 5) return "bg-red-500/20 text-red-200 border-red-500/40";
-  if (sev >= 4) return "bg-orange-500/20 text-orange-200 border-orange-500/40";
-  if (sev >= 3) return "bg-amber-500/20 text-amber-200 border-amber-500/40";
-  if (sev >= 2) return "bg-yellow-500/20 text-yellow-200 border-yellow-500/40";
-  return "bg-emerald-500/20 text-emerald-200 border-emerald-500/40";
+  if (sev >= 5) return "bg-red-50 text-red-700 border-red-200";
+  if (sev >= 4) return "bg-orange-50 text-orange-700 border-orange-200";
+  if (sev >= 3) return "bg-amber-50 text-amber-700 border-amber-200";
+  if (sev >= 2) return "bg-yellow-50 text-yellow-700 border-yellow-200";
+  return "bg-emerald-50 text-emerald-700 border-emerald-200";
 }
 
 export default function VoiceDistress({ token }: { token: string }) {
@@ -115,11 +115,11 @@ export default function VoiceDistress({ token }: { token: string }) {
         : "Describe your situation. AI categorizes it for staff.";
 
   return (
-    <section className="bg-neutral-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-5 text-center flex flex-col items-center">
-      <h3 className="font-semibold text-white mb-1">Distress Intercom</h3>
-      <p className="text-xs text-neutral-400 mb-4">{status}</p>
+    <section className="bg-white border border-zinc-200 rounded-3xl p-5 text-center flex flex-col items-center shadow-sm">
+      <h3 className="font-semibold text-zinc-900 mb-1">Distress Intercom</h3>
+      <p className="text-xs text-zinc-500 mb-4">{status}</p>
 
-      <div className="grid grid-cols-2 gap-1 bg-black/40 border border-white/10 rounded-full p-1 mb-5 w-full max-w-[240px]">
+      <div className="grid grid-cols-2 gap-1 bg-slate-100 border border-zinc-200 rounded-full p-1 mb-5 w-full max-w-[240px]">
         <button
           onClick={() => {
             setMode("voice");
@@ -128,8 +128,8 @@ export default function VoiceDistress({ token }: { token: string }) {
           disabled={recording || processing}
           className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-1.5 rounded-full transition-all ${
             mode === "voice"
-              ? "bg-white/10 text-white shadow-inner"
-              : "text-neutral-400 hover:text-neutral-200"
+              ? "bg-white text-zinc-900 shadow-sm"
+              : "text-zinc-500 hover:text-zinc-900"
           } disabled:opacity-50`}
         >
           <Mic className="w-3.5 h-3.5" /> Voice
@@ -142,8 +142,8 @@ export default function VoiceDistress({ token }: { token: string }) {
           disabled={recording || processing}
           className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-1.5 rounded-full transition-all ${
             mode === "text"
-              ? "bg-white/10 text-white shadow-inner"
-              : "text-neutral-400 hover:text-neutral-200"
+              ? "bg-white text-zinc-900 shadow-sm"
+              : "text-zinc-500 hover:text-zinc-900"
           } disabled:opacity-50`}
         >
           <Type className="w-3.5 h-3.5" /> Type
@@ -152,11 +152,11 @@ export default function VoiceDistress({ token }: { token: string }) {
 
       {mode === "voice" ? (
         <div className="relative w-24 h-24 mb-4 flex items-center justify-center">
-          {recording && <div className="absolute inset-0 bg-red-500/20 rounded-full animate-ping" />}
+          {recording && <div className="absolute inset-0 bg-red-500/25 rounded-full animate-ping" />}
           <button
             onClick={recording ? stop : start}
             disabled={processing}
-            className="relative w-16 h-16 bg-gradient-to-b from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(239,68,68,0.4)] text-white focus:outline-none focus:scale-95 transition-all disabled:opacity-60"
+            className="relative w-16 h-16 bg-gradient-to-b from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 rounded-full flex items-center justify-center shadow-lg shadow-red-500/25 text-white focus:outline-none focus:scale-95 transition-all disabled:opacity-60"
           >
             {processing ? (
               <Loader2 className="w-8 h-8 animate-spin" />
@@ -175,12 +175,12 @@ export default function VoiceDistress({ token }: { token: string }) {
             disabled={processing}
             rows={3}
             placeholder="e.g., Smoke coming under the door, I can't breathe well..."
-            className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-sm text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-red-500/40 resize-none disabled:opacity-60"
+            className="w-full bg-white border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 resize-none disabled:opacity-60"
           />
           <button
             type="submit"
             disabled={processing || !text.trim()}
-            className="flex items-center justify-center gap-2 bg-gradient-to-b from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-2.5 text-sm shadow-[0_0_20px_rgba(239,68,68,0.3)] transition-all"
+            className="flex items-center justify-center gap-2 bg-gradient-to-b from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-2.5 text-sm shadow-md shadow-red-500/25 transition-all"
           >
             {processing ? (
               <>
@@ -195,13 +195,13 @@ export default function VoiceDistress({ token }: { token: string }) {
         </form>
       )}
 
-      <div className="w-full bg-black/50 p-3 rounded-xl border border-white/5 text-left min-h-[64px]">
+      <div className="w-full bg-slate-50 p-3 rounded-xl border border-zinc-200 text-left min-h-[64px]">
         {error ? (
-          <p className="text-sm text-red-400 font-medium">{error}</p>
+          <p className="text-sm text-red-600 font-medium">{error}</p>
         ) : result ? (
           <>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold">
+              <p className="text-[10px] text-emerald-600 uppercase tracking-widest font-bold">
                 Sent to Staff
               </p>
               <div className="flex items-center gap-1.5">
@@ -219,17 +219,17 @@ export default function VoiceDistress({ token }: { token: string }) {
                 </span>
               </div>
             </div>
-            <p className="text-sm text-neutral-100 font-semibold leading-relaxed">
+            <p className="text-sm text-zinc-900 font-semibold leading-relaxed">
               &ldquo;{result.summary}&rdquo;
             </p>
             {result.transcript && result.transcript !== result.summary && (
-              <p className="text-[11px] text-neutral-500 mt-2 leading-relaxed">
+              <p className="text-[11px] text-zinc-500 mt-2 leading-relaxed">
                 {mode === "voice" ? "Transcript" : "Original"}: {result.transcript}
               </p>
             )}
           </>
         ) : (
-          <p className="text-sm text-neutral-500 italic font-medium leading-relaxed">
+          <p className="text-sm text-zinc-400 italic font-medium leading-relaxed">
             {mode === "voice"
               ? "Your summarized distress message will appear here after recording."
               : "Your triaged message will appear here after sending."}

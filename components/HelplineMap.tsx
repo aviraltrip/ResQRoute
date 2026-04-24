@@ -97,8 +97,8 @@ export default function HelplineMap({ hotelLat, hotelLng, hotelName, helplines }
   return (
     <div
       ref={containerRef}
-      className="w-full h-full min-h-[420px] rounded-2xl overflow-hidden border border-white/10"
-      style={{ background: "#0a0a0e" }}
+      className="w-full h-full min-h-[420px] rounded-2xl overflow-hidden border border-zinc-200 shadow-sm"
+      style={{ background: "#f8fafc" }}
     />
   );
 }

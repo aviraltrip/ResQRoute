@@ -20,6 +20,7 @@ enum GuestStatus {
   evacuating
   safe
   trapped
+  pending_arrival
 }
 
 enum DistressCategory {
@@ -76,6 +77,7 @@ model Edge {
 model Guest {
   id                String            @id @default(cuid())
   token             String            @unique @default(cuid())
+  setupToken        String?           @unique
   name              String
   phone             String
   roomId            String

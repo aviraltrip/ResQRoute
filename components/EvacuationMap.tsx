@@ -3,7 +3,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { RouteStep } from '@/lib/routing';
 import { Room } from '@prisma/client';
-import { Footprints, MousePointerClick, ArrowRight } from 'lucide-react';
+import { Footprints, MousePointerClick, Flame } from 'lucide-react';
 
 interface EvacuationMapProps {
   route: RouteStep[];
@@ -69,6 +69,70 @@ const exits = [
   { id: 'EXIT_B', label: 'EXIT B', x: 1040, y: 80, width: 100, height: 100, corridorNodeX: 1000, corridorNodeY: 220 }
 ];
 
+type CoreTile = {
+  id: string;
+  label: string;
+  kind: 'stairs' | 'elevator' | 'washroom';
+  x: number; y: number; width: number; height: number;
+  centerX: number; centerY: number;
+  taps: { id: string; x: number; y: number }[];
+};
+
+const coreTiles: CoreTile[] = [
+  {
+    id: 'STAIRS_L', label: 'Stairwell L', kind: 'stairs',
+    x: 350, y: 320, width: 100, height: 180, centerX: 400, centerY: 410,
+    taps: [
+      { id: 'C_STAIRS_L_T', x: 400, y: 220 },
+      { id: 'C_STAIRS_L_B', x: 400, y: 600 },
+    ],
+  },
+  {
+    id: 'ELEVATORS', label: 'Elevators', kind: 'elevator',
+    x: 480, y: 320, width: 240, height: 80, centerX: 600, centerY: 360,
+    taps: [{ id: 'C_ELEVATORS_T', x: 600, y: 220 }],
+  },
+  {
+    id: 'STAIRS_R', label: 'Stairwell R', kind: 'stairs',
+    x: 750, y: 320, width: 100, height: 180, centerX: 800, centerY: 410,
+    taps: [
+      { id: 'C_STAIRS_R_T', x: 800, y: 220 },
+      { id: 'C_STAIRS_R_B', x: 800, y: 600 },
+    ],
+  },
+  {
+    id: 'WASH_M', label: 'Male WC', kind: 'washroom',
+    x: 480, y: 400, width: 120, height: 100, centerX: 540, centerY: 450,
+    taps: [{ id: 'C_WASH_M_B', x: 540, y: 600 }],
+  },
+  {
+    id: 'WASH_F', label: 'Female WC', kind: 'washroom',
+    x: 600, y: 400, width: 120, height: 100, centerX: 660, centerY: 450,
+    taps: [{ id: 'C_WASH_F_B', x: 660, y: 600 }],
+  },
+];
+
+// Fire hazards — any graph edge whose segment comes within HAZARD_BLOCK_RADIUS
+// of a hazard is dropped, so Dijkstra naturally reroutes to the other exit.
+const hazards = [
+  { id: 'HZ_1', x: 620, y: 220 }, // mid top corridor
+  { id: 'HZ_2', x: 1000, y: 440 }, // mid right corridor
+];
+
+const HAZARD_BLOCK_RADIUS = 30;
+
+function distPointToSegment(px: number, py: number, x1: number, y1: number, x2: number, y2: number) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+  let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  const cx = x1 + t * dx;
+  const cy = y1 + t * dy;
+  return Math.hypot(px - cx, py - cy);
+}
+
 // --- Build Navigation Graph ---
 type GraphNode = { id: string; x: number; y: number };
 type GraphEdge = { from: string; to: string; weight: number };
@@ -83,6 +147,10 @@ exits.forEach(e => {
   nodes.push({ id: e.id, x: e.x + e.width / 2, y: e.y + e.height / 2 });
   nodes.push({ id: `C_${e.id}`, x: e.corridorNodeX, y: e.corridorNodeY });
 });
+coreTiles.forEach(t => {
+  nodes.push({ id: t.id, x: t.centerX, y: t.centerY });
+  t.taps.forEach(tap => nodes.push({ id: tap.id, x: tap.x, y: tap.y }));
+});
 // Corners
 nodes.push({ id: 'C_TL', x: 200, y: 220 }, { id: 'C_TR', x: 1000, y: 220 });
 nodes.push({ id: 'C_BL', x: 200, y: 600 }, { id: 'C_BR', x: 1000, y: 600 });
@@ -91,6 +159,11 @@ function addEdge(n1: string, n2: string) {
   const node1 = nodes.find(n => n.id === n1);
   const node2 = nodes.find(n => n.id === n2);
   if (!node1 || !node2) return;
+  for (const h of hazards) {
+    if (distPointToSegment(h.x, h.y, node1.x, node1.y, node2.x, node2.y) < HAZARD_BLOCK_RADIUS) {
+      return;
+    }
+  }
   const dist = Math.sqrt(Math.pow(node1.x - node2.x, 2) + Math.pow(node1.y - node2.y, 2));
   edges.push({ from: n1, to: n2, weight: dist });
   edges.push({ from: n2, to: n1, weight: dist });
@@ -98,6 +171,7 @@ function addEdge(n1: string, n2: string) {
 
 mapRooms.forEach(r => addEdge(r.id, `C_${r.id}`));
 exits.forEach(e => addEdge(e.id, `C_${e.id}`));
+coreTiles.forEach(t => t.taps.forEach(tap => addEdge(t.id, tap.id)));
 
 // Connect Corridors
 ['220', '600'].forEach(yStr => {
@@ -191,26 +265,29 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
   const distMeters = (distance / 12).toFixed(0);
   const timeSecs = (distance / 12 / 1.5).toFixed(0); // Assuming 1.5m/s walking speed
 
+  const selectedCore = coreTiles.find(t => t.id === startRoom);
+  const startLabel = selectedCore ? selectedCore.label : `Room ${startRoom}`;
+
   return (
     <div className="w-full h-full bg-[#f4f1ea] text-slate-800 font-sans relative overflow-hidden flex flex-col items-center justify-center">
-      
-      {/* Header matching the image */}
-      <div className="absolute top-4 left-4 flex flex-col items-center bg-white p-4 shadow-xl border border-slate-200 z-10 w-64 rounded-sm pointer-events-none">
-        <h1 className="font-serif text-xl font-bold tracking-widest text-[#8b7355] uppercase text-center mb-1">
+
+      {/* Top-left title card (compact) */}
+      <div className="absolute top-3 left-3 flex flex-col items-center bg-white px-3 py-2.5 shadow-lg border border-slate-200 z-10 w-44 rounded-sm pointer-events-none">
+        <h1 className="font-serif text-sm font-bold tracking-widest text-[#8b7355] uppercase text-center leading-tight">
           Grand Horizon Hotel
         </h1>
-        <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-4">Your Safety, Our Priority</p>
-        
-        <div className="w-full h-px bg-slate-200 mb-4" />
-        
-        <h2 className="text-2xl font-bold text-[#1a4a38] uppercase">Floor {currentFloor}</h2>
-        <p className="text-sm font-semibold tracking-wider mb-4">EVACUATION MAP</p>
-        
-        <div className="w-full border-2 border-red-500 rounded p-2 text-center bg-red-50 flex flex-col items-center">
-          <p className="text-red-600 font-bold uppercase text-xs flex items-center gap-1">
-            <MousePointerClick className="w-3 h-3" /> Select a Room
+        <p className="text-[9px] uppercase tracking-widest text-slate-500 mb-2">Your Safety, Our Priority</p>
+
+        <div className="w-full h-px bg-slate-200 mb-2" />
+
+        <h2 className="text-base font-bold text-[#1a4a38] uppercase leading-none">Floor {currentFloor}</h2>
+        <p className="text-[10px] font-semibold tracking-wider mb-2">EVACUATION MAP</p>
+
+        <div className="w-full border border-red-500 rounded px-2 py-1.5 text-center bg-red-50 flex flex-col items-center">
+          <p className="text-red-600 font-bold uppercase text-[9px] flex items-center gap-1">
+            <MousePointerClick className="w-2.5 h-2.5" /> Select a Start
           </p>
-          <p className="font-bold text-lg mt-1">Room {startRoom}</p>
+          <p className="font-bold text-xs mt-0.5 truncate max-w-full">{startLabel}</p>
         </div>
       </div>
 
@@ -241,47 +318,48 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
 
           <rect width="100%" height="100%" fill="url(#grid)" />
 
-          {/* Central Core Area */}
+          {/* Central Core Area — clickable tiles for stairs / elevators / washrooms */}
           <g filter="url(#shadow)">
-            <rect x="350" y="320" width="500" height="180" fill="#e2dcd0" stroke="#a39a8c" strokeWidth="2" />
-            
-            {/* Elevators (Center Top of core) */}
-            <rect x="480" y="320" width="240" height="80" fill="#d1ccc0" stroke="#a39a8c" strokeWidth="2" />
-            <text x="600" y="365" textAnchor="middle" fontSize="16" fontWeight="bold" fill="#555">ELEVATORS</text>
-            <g transform="translate(520, 335)">
-              <rect x="0" y="0" width="25" height="25" fill="none" stroke="#555" strokeWidth="2" />
-              <ArrowRight className="w-5 h-5 text-[#555]" x="2" y="2" transform="rotate(90 12.5 12.5) scale(0.8)" />
-            </g>
-            <g transform="translate(560, 335)">
-              <rect x="0" y="0" width="25" height="25" fill="none" stroke="#555" strokeWidth="2" />
-              <ArrowRight className="w-5 h-5 text-[#555]" x="2" y="2" transform="rotate(90 12.5 12.5) scale(0.8)" />
-            </g>
-            <g transform="translate(600, 335)">
-              <rect x="0" y="0" width="25" height="25" fill="none" stroke="#555" strokeWidth="2" />
-              <ArrowRight className="w-5 h-5 text-[#555]" x="2" y="2" transform="rotate(-90 12.5 12.5) scale(0.8)" />
-            </g>
-            <g transform="translate(640, 335)">
-              <rect x="0" y="0" width="25" height="25" fill="none" stroke="#555" strokeWidth="2" />
-              <ArrowRight className="w-5 h-5 text-[#555]" x="2" y="2" transform="rotate(-90 12.5 12.5) scale(0.8)" />
-            </g>
+            {/* Soft backing block behind the core tiles */}
+            <rect x="346" y="316" width="508" height="188" rx="6" fill="#ece6d8" stroke="#c9bfa8" strokeWidth="1.5" />
 
-            {/* Central Stairs (Left & Right inside core) */}
-            <rect x="350" y="320" width="100" height="180" fill="#c4bfb3" stroke="#a39a8c" strokeWidth="2" />
-            <text x="400" y="410" textAnchor="middle" fontSize="16" fontWeight="bold" fill="#555" transform="rotate(-90 400,410)">STAIRS</text>
-            <line x1="370" y1="320" x2="370" y2="500" stroke="#a39a8c" strokeWidth="1" strokeDasharray="5,5" />
-            
-            <rect x="750" y="320" width="100" height="180" fill="#c4bfb3" stroke="#a39a8c" strokeWidth="2" />
-            <text x="800" y="410" textAnchor="middle" fontSize="16" fontWeight="bold" fill="#555" transform="rotate(-90 800,410)">STAIRS</text>
-            <line x1="770" y1="320" x2="770" y2="500" stroke="#a39a8c" strokeWidth="1" strokeDasharray="5,5" />
-
-            {/* Washrooms (Bottom Center of core) */}
-            <rect x="480" y="400" width="120" height="100" fill="#a4bbf0" stroke="#a39a8c" strokeWidth="2" />
-            <text x="540" y="450" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#333">MALE</text>
-            <text x="540" y="465" textAnchor="middle" fontSize="10" fill="#333">WASHROOM</text>
-            
-            <rect x="600" y="400" width="120" height="100" fill="#a4bbf0" stroke="#a39a8c" strokeWidth="2" />
-            <text x="660" y="450" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#333">FEMALE</text>
-            <text x="660" y="465" textAnchor="middle" fontSize="10" fill="#333">WASHROOM</text>
+            {(() => {
+              const kindFill: Record<CoreTile['kind'], { fill: string; stroke: string; text: string }> = {
+                stairs:   { fill: '#e0e7ff', stroke: '#6366f1', text: '#3730a3' },
+                elevator: { fill: '#fef3c7', stroke: '#d97706', text: '#92400e' },
+                washroom: { fill: '#ccfbf1', stroke: '#0d9488', text: '#115e59' },
+              };
+              return coreTiles.map(t => {
+                const isStart = startRoom === t.id;
+                const palette = kindFill[t.kind];
+                return (
+                  <g
+                    key={t.id}
+                    onClick={() => setStartRoom(t.id)}
+                    className="cursor-pointer group"
+                  >
+                    <rect
+                      x={t.x} y={t.y} width={t.width} height={t.height}
+                      rx="4"
+                      fill={isStart ? '#fee2e2' : palette.fill}
+                      stroke={isStart ? '#ef4444' : palette.stroke}
+                      strokeWidth={isStart ? 3 : 2}
+                      className="transition-all duration-200 group-hover:brightness-95"
+                    />
+                    <text
+                      x={t.centerX} y={t.centerY + 4}
+                      textAnchor="middle"
+                      fontSize={t.kind === 'elevator' ? 14 : 13}
+                      fontWeight="bold"
+                      fill={isStart ? '#991b1b' : palette.text}
+                      className="pointer-events-none uppercase tracking-wider"
+                    >
+                      {t.label}
+                    </text>
+                  </g>
+                );
+              });
+            })()}
           </g>
 
           {/* Rooms */}
@@ -354,6 +432,18 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
             </g>
           )}
 
+          {/* Fire Hazards — block nearby graph edges */}
+          {hazards.map(h => (
+            <g key={h.id} transform={`translate(${h.x}, ${h.y})`} className="pointer-events-none">
+              <circle r="26" fill="rgba(239,68,68,0.18)" className="animate-ping" />
+              <circle r="16" fill="#fee2e2" stroke="#dc2626" strokeWidth="2.5" />
+              <Flame className="w-5 h-5 text-red-600" x="-10" y="-10" />
+              <text x="0" y="30" textAnchor="middle" fontSize="9" fontWeight="bold" fill="#b91c1c" className="uppercase tracking-widest">
+                Hazard
+              </text>
+            </g>
+          ))}
+
         </svg>
       </div>
 
@@ -363,48 +453,59 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
         }
       `}} />
       
-      {/* Legend overlays */}
-      <div className="absolute bottom-6 right-6 flex flex-col gap-4 pointer-events-none">
-        {/* Key Info */}
-        <div className="bg-white p-4 shadow-xl border border-slate-200 rounded-sm w-64">
-          <h3 className="font-bold text-slate-800 text-sm uppercase tracking-widest mb-3 border-b pb-2">Calculation Results</h3>
-          <div className="flex items-start gap-3 mb-4">
-            <div className="bg-emerald-600 p-1.5 rounded">
-              <Footprints className="w-5 h-5 text-white" />
+      {/* Calculation Results (compact) */}
+      <div className="absolute bottom-3 right-3 flex flex-col gap-3 pointer-events-none">
+        <div className="bg-white px-3 py-2.5 shadow-lg border border-slate-200 rounded-sm w-48">
+          <h3 className="font-bold text-slate-800 text-[10px] uppercase tracking-widest mb-2 border-b pb-1.5">Calculation</h3>
+          <div className="flex items-start gap-2 mb-2">
+            <div className="bg-emerald-600 p-1 rounded shrink-0">
+              <Footprints className="w-3.5 h-3.5 text-white" />
             </div>
-            <div>
-              <p className="text-sm font-bold text-slate-800">Nearest Exit</p>
-              <p className="text-xs text-emerald-700 font-bold">{activeExitId === 'EXIT_A' ? 'Emergency Exit A (Left)' : activeExitId === 'EXIT_B' ? 'Emergency Exit B (Right)' : 'Select Room'}</p>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold text-slate-800 leading-tight">Nearest Exit</p>
+              <p className="text-[10px] text-emerald-700 font-bold truncate">{activeExitId === 'EXIT_A' ? 'Exit A (Left)' : activeExitId === 'EXIT_B' ? 'Exit B (Right)' : 'Select Start'}</p>
             </div>
           </div>
-          <div className="border-t pt-3 flex justify-between">
+          <div className="border-t pt-2 flex justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-800">Distance</p>
-              <p className="text-sm text-slate-600">{distMeters} m</p>
+              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Distance</p>
+              <p className="text-xs font-semibold text-slate-700">{distMeters} m</p>
             </div>
             <div className="text-right">
-              <p className="text-xs font-bold text-slate-800">Est. Time</p>
-              <p className="text-sm text-slate-600">~ {timeSecs} sec</p>
+              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Est. Time</p>
+              <p className="text-xs font-semibold text-slate-700">~ {timeSecs}s</p>
             </div>
           </div>
         </div>
       </div>
-      
-      {/* Legend Left */}
-      <div className="absolute bottom-6 left-4 bg-white p-4 shadow-xl border border-slate-200 rounded-sm w-48 pointer-events-none">
-        <h3 className="font-bold text-slate-800 text-sm uppercase tracking-widest mb-3 border-b pb-2 text-center">Legend</h3>
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-6 h-4 bg-[#fcf8f2] border border-[#a39a8c]"></div>
-            <span className="text-xs font-medium text-slate-700">Guest Room</span>
+
+      {/* Legend (compact) */}
+      <div className="absolute bottom-3 left-3 bg-white px-3 py-2.5 shadow-lg border border-slate-200 rounded-sm w-40 pointer-events-none">
+        <h3 className="font-bold text-slate-800 text-[10px] uppercase tracking-widest mb-2 border-b pb-1.5 text-center">Legend</h3>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-3 bg-[#fcf8f2] border border-[#a39a8c] shrink-0"></div>
+            <span className="text-[10px] font-medium text-slate-700">Guest Room</span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-6 h-4 bg-[#d1e7dd] border border-[#0f5132]"></div>
-            <span className="text-xs font-medium text-slate-700">Emergency Exit</span>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-3 bg-[#e0e7ff] border border-[#6366f1] shrink-0"></div>
+            <span className="text-[10px] font-medium text-slate-700">Stairs</span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-6 h-2 border-t-[3px] border-dashed border-emerald-500"></div>
-            <span className="text-xs font-medium text-slate-700">Evacuation Route</span>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-3 bg-[#fef3c7] border border-[#d97706] shrink-0"></div>
+            <span className="text-[10px] font-medium text-slate-700">Elevator</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-3 bg-[#d1e7dd] border border-[#0f5132] shrink-0"></div>
+            <span className="text-[10px] font-medium text-slate-700">Exit</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-3 bg-red-100 border-2 border-red-500 rounded-full shrink-0"></div>
+            <span className="text-[10px] font-bold text-red-700">Fire Hazard</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-0 border-t-[3px] border-dashed border-emerald-500 shrink-0"></div>
+            <span className="text-[10px] font-medium text-slate-700">Route</span>
           </div>
         </div>
       </div>
