@@ -23,14 +23,7 @@ export default async function DemoPortal() {
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 pt-16 pb-24 w-full max-w-4xl mx-auto">
 
-        {/* Badge */}
-        <div className="mb-8 flex items-center justify-center gap-2 px-4 py-1.5 rounded-full border border-zinc-200 bg-white shadow-sm">
-          <span className="relative flex h-2 w-2 items-center justify-center">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75"></span>
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500"></span>
-          </span>
-          <p className="text-xs text-zinc-500 font-medium tracking-wide">Next Generation Emergency Platform</p>
-        </div>
+
 
         {/* Title */}
         <h1 className="mb-6 text-zinc-900 text-center text-5xl sm:text-7xl font-extrabold tracking-tighter md:text-[clamp(3rem,8vw,6rem)] leading-tight">

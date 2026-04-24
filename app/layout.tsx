@@ -13,8 +13,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ResQRoute — Hotel Emergency Coordination",
+  title: "ResQRoute - Hotel Emergency Coordination",
   description: "Real-time hotel emergency coordination for guests, staff, and responders.",
+  icons: {
+    icon: "/favicon.png?v=1",
+    shortcut: "/favicon.png?v=1",
+    apple: "/favicon.png?v=1",
+  },
 };
 
 export const viewport: Viewport = {
