@@ -44,6 +44,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "prisma": "^6.19.3",
+    "react-doctor": "^0.5.1",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"
