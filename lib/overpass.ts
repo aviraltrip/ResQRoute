@@ -129,12 +129,13 @@ export async function findHelplines(
   console.log(`[overpass] ${elements.length} elements for [${kinds.join(",")}] near ${lat},${lng}`);
 
   const seen = new Set<string>();
+  const kindSet = new Set<string>(kinds);
   const out: Helpline[] = [];
 
   for (const el of elements) {
     const tags = el.tags ?? {};
     const amenity = tags.amenity as Helpline["kind"] | undefined;
-    if (!amenity || !kinds.includes(amenity)) continue;
+    if (!amenity || !kindSet.has(amenity)) continue;
 
     const elLat = el.lat ?? el.center?.lat;
     const elLng = el.lon ?? el.center?.lon;

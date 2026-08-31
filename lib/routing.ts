@@ -13,12 +13,13 @@ export async function computeEvacuationRoute(
   startRoomId: string,
   avoidRoomIds: string[] = []
 ): Promise<RouteStep[]> {
-  // Fetch everything needed. For a huge hotel, you might cache this graph in Redis.
-  // For ResQRoute, pulling the graph is fast.
-  const rooms = await prisma.room.findMany();
-  const edges = await prisma.edge.findMany({
-    where: { blocked: false }
-  });
+  // Fetch everything needed concurrently
+  const [rooms, edges] = await Promise.all([
+    prisma.room.findMany(),
+    prisma.edge.findMany({
+      where: { blocked: false }
+    })
+  ]);
 
   const graph: Record<string, { to: string; weight: number }[]> = {};
   
@@ -26,11 +27,12 @@ export async function computeEvacuationRoute(
   rooms.forEach(r => { graph[r.id] = []; });
   
   const roomsById = new Map(rooms.map(r => [r.id, r]));
+  const avoidSet = new Set(avoidRoomIds);
 
   // Populate edges
   edges.forEach(e => {
     // avoid edges pointing into hazards
-    if (avoidRoomIds.includes(e.toRoomId)) return;
+    if (avoidSet.has(e.toRoomId)) return;
     
     const fromRoom = roomsById.get(e.fromRoomId);
     const toRoom = roomsById.get(e.toRoomId);
@@ -54,7 +56,7 @@ export async function computeEvacuationRoute(
 
   // We want to avoid the origin hazard room completely if it's not our start room
   // (If the guest is IN the hazard room, they obviously have to leave it, so don't delete their start node)
-  if (!avoidRoomIds.includes(startRoomId)) {
+  if (!avoidSet.has(startRoomId)) {
     avoidRoomIds.forEach(hazard => {
       if(graph[hazard]) delete graph[hazard];
     });
@@ -126,7 +128,8 @@ export async function computeEvacuationRoute(
   let step: string | null = bestExit;
   
   while (step) {
-    const room = rooms.find(r => r.id === step)!;
+    const room = roomsById.get(step);
+    if (!room) break;
     path.unshift({ 
       roomId: room.id, 
       roomNumber: room.number, 
