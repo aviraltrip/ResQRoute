@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { IncidentType } from "@prisma/client";
 import { triageDistress } from "@/lib/openrouter";
 
@@ -11,9 +12,9 @@ const GUEST_COOKIE = "resq_guest_token";
 const GUEST_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
 export async function checkInGuest(formData: FormData) {
-  const name = formData.get("name") as string;
-  const phone = formData.get("phone") as string;
-  const roomId = formData.get("roomId") as string;
+  const name = (formData.get("name") as string | null)?.trim();
+  const phone = (formData.get("phone") as string | null)?.trim();
+  const roomId = (formData.get("roomId") as string | null)?.trim();
   const accessibility = formData.get("accessibility") === "on";
 
   if (!name || !phone || !roomId) {
@@ -62,7 +63,7 @@ export async function signOutGuest() {
 export async function preRegisterGuest(formData: FormData) {
   const name = (formData.get("name") as string | null)?.trim();
   const phone = (formData.get("phone") as string | null)?.trim();
-  const roomId = formData.get("roomId") as string | null;
+  const roomId = (formData.get("roomId") as string | null)?.trim();
   const accessibility = formData.get("accessibility") === "on";
 
   if (!name || !phone || !roomId) {
@@ -93,11 +94,18 @@ export async function preRegisterGuest(formData: FormData) {
 }
 
 export async function confirmGuestCheckIn(setupToken: string, formData: FormData) {
+  const cleanSetupToken = setupToken?.trim();
+  if (!cleanSetupToken) throw new Error("Invalid setup token");
+
   const phone = (formData.get("phone") as string | null)?.trim();
   const accessibility = formData.get("accessibility") === "on";
   if (!phone) throw new Error("Phone is required");
 
-  const guest = await prisma.guest.findUnique({ where: { setupToken } });
+  const [guest, cookieStore] = await Promise.all([
+    prisma.guest.findUnique({ where: { setupToken: cleanSetupToken } }),
+    cookies(),
+  ]);
+
   if (!guest) throw new Error("Invalid or expired setup link");
 
   const updated = await prisma.guest.update({
@@ -110,7 +118,6 @@ export async function confirmGuestCheckIn(setupToken: string, formData: FormData
     },
   });
 
-  const cookieStore = await cookies();
   cookieStore.set(GUEST_COOKIE, updated.token, {
     httpOnly: true,
     sameSite: "lax",
@@ -122,8 +129,12 @@ export async function confirmGuestCheckIn(setupToken: string, formData: FormData
 }
 
 export async function triggerDistress(guestToken: string, text: string) {
+  const cleanToken = guestToken?.trim();
+  const cleanText = text?.trim();
+  if (!cleanToken || !cleanText) throw new Error("Token and message are required");
+
   const guest = await prisma.guest.findUnique({
-    where: { token: guestToken },
+    where: { token: cleanToken },
     include: { room: true },
   });
 
@@ -146,32 +157,38 @@ export async function triggerDistress(guestToken: string, text: string) {
     });
   }
 
-  // Insert distress message
-  const message = await prisma.distressMessage.create({
-    data: {
-      incidentId: incident.id,
-      guestId: guest.id,
-      roomId: guest.roomId,
-      text,
-      severity: 5, // Default panic severity
-      category: "panic",
-    }
-  });
-
-  await prisma.guest.update({
-    where: { id: guest.id },
-    data: { status: "trapped" }
-  });
+  // Insert distress message and update guest status in parallel
+  const [message] = await Promise.all([
+    prisma.distressMessage.create({
+      data: {
+        incidentId: incident.id,
+        guestId: guest.id,
+        roomId: guest.roomId,
+        text: cleanText,
+        severity: 5, // Default panic severity
+        category: "panic",
+      }
+    }),
+    prisma.guest.update({
+      where: { id: guest.id },
+      data: { status: "trapped" }
+    }),
+  ]);
 
   revalidatePath("/staff");
   return message;
 }
 
 export async function triggerAlarm(originRoomId: string, type: IncidentType) {
-  const room = await prisma.room.findUnique({ where: { id: originRoomId } });
-  if (!room) throw new Error("Invalid room");
+  const cleanRoomId = originRoomId?.trim();
+  if (!cleanRoomId || !type) throw new Error("Room ID and incident type are required");
 
-  const existingIncident = await prisma.incident.findFirst({ orderBy: { startedAt: "desc" } });
+  const [room, existingIncident] = await Promise.all([
+    prisma.room.findUnique({ where: { id: cleanRoomId } }),
+    prisma.incident.findFirst({ orderBy: { startedAt: "desc" } }),
+  ]);
+
+  if (!room) throw new Error("Invalid room");
 
   let incident;
   if (existingIncident) {
@@ -193,71 +210,76 @@ export async function triggerAlarm(originRoomId: string, type: IncidentType) {
     });
   }
 
-  // Auto-Dispatch SMS + Voice Notification
-  const latestMessage = await prisma.distressMessage.findFirst({
-    where: { roomId: room.id },
-    orderBy: { createdAt: "desc" },
-    include: {
-      guest: true,
-      room: { include: { hotel: true } },
-    },
-  });
-
-  if (latestMessage && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
-    const hotelName = latestMessage.room.hotel.name;
-    const roomNumber = latestMessage.room.number;
-    const floor = latestMessage.room.floor;
-    const guestName = latestMessage.guest.name;
-    const severity = latestMessage.severity ?? "?";
-    const category = latestMessage.category ?? "unknown";
-    const description = latestMessage.summary || latestMessage.text;
-
-    const smsBody =
-      `[RESQROUTE DISPATCH]\n` +
-      `Hotel: ${hotelName}\n` +
-      `Guest: ${guestName}\n` +
-      `Room: ${roomNumber} (Floor ${floor})\n` +
-      `Severity: ${severity}/5  |  Category: ${category}\n` +
-      `Problem: ${description}`;
-
+  // Auto-Dispatch SMS + Voice Notification in non-blocking background task
+  after(async () => {
     try {
-      const twilio = (await import('twilio')).default;
-      const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-      await client.messages.create({
-        body: smsBody.slice(0, 1500),
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: '+91 6363640564'
+      const latestMessage = await prisma.distressMessage.findFirst({
+        where: { roomId: room.id },
+        orderBy: { createdAt: "desc" },
+        include: {
+          guest: true,
+          room: { include: { hotel: true } },
+        },
       });
-      console.log("Sent Dispatch SMS to +91 6363640564");
 
-      const escapeXml = (s: string) =>
-        s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
-      const spokenLine = `Emergency dispatch from ${hotelName}. Guest ${guestName} in room ${roomNumber}, floor ${floor}, reports: ${description}. Severity ${severity} of 5. Category ${String(category).replace(/_/g, " ")}.`;
-      const twiml =
-        `<Response>` +
-        `<Say voice="alice">${escapeXml(spokenLine)}</Say>` +
-        `<Pause length="1"/>` +
-        `<Say voice="alice">${escapeXml("Repeat. " + spokenLine)}</Say>` +
-        `</Response>`;
+      if (latestMessage && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
+        const hotelName = latestMessage.room.hotel.name;
+        const roomNumber = latestMessage.room.number;
+        const floor = latestMessage.room.floor;
+        const guestName = latestMessage.guest.name;
+        const severity = latestMessage.severity ?? "?";
+        const category = latestMessage.category ?? "unknown";
+        const description = latestMessage.summary || latestMessage.text;
 
-      await client.calls.create({
-        twiml,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: '+91 6363640564'
-      });
-      console.log("Placed Dispatch Voice Call to +91 6363640564");
+        const smsBody =
+          `[RESQROUTE DISPATCH]\n` +
+          `Hotel: ${hotelName}\n` +
+          `Guest: ${guestName}\n` +
+          `Room: ${roomNumber} (Floor ${floor})\n` +
+          `Severity: ${severity}/5  |  Category: ${category}\n` +
+          `Problem: ${description}`;
+
+        const twilio = (await import('twilio')).default;
+        const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+
+        const escapeXml = (s: string) =>
+          s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+        const spokenLine = `Emergency dispatch from ${hotelName}. Guest ${guestName} in room ${roomNumber}, floor ${floor}, reports: ${description}. Severity ${severity} of 5. Category ${String(category).replace(/_/g, " ")}.`;
+        const twiml =
+          `<Response>` +
+          `<Say voice="alice">${escapeXml(spokenLine)}</Say>` +
+          `<Pause length="1"/>` +
+          `<Say voice="alice">${escapeXml("Repeat. " + spokenLine)}</Say>` +
+          `</Response>`;
+
+        await Promise.all([
+          client.messages.create({
+            body: smsBody.slice(0, 1500),
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: '+91 6363640564'
+          }),
+          client.calls.create({
+            twiml,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: '+91 6363640564'
+          })
+        ]);
+      }
     } catch (err) {
       console.error("Twilio dispatch failed:", err);
     }
-  }
+  });
 
   revalidatePath("/staff");
   return incident;
 }
 
 export async function markGuestSafe(guestToken: string) {
+  const cleanToken = guestToken?.trim();
+  if (!cleanToken) throw new Error("Guest token is required");
+
   const guest = await prisma.guest.update({
-    where: { token: guestToken },
+    where: { token: cleanToken },
     data: { status: "safe" }
   });
   revalidatePath("/staff");
@@ -265,26 +287,34 @@ export async function markGuestSafe(guestToken: string) {
 }
 
 export async function removeGuest(guestId: string) {
-  await prisma.distressMessage.deleteMany({ where: { guestId } });
-  await prisma.guest.delete({ where: { id: guestId } });
+  const cleanId = guestId?.trim();
+  if (!cleanId) throw new Error("Guest ID is required");
+
+  await prisma.distressMessage.deleteMany({ where: { guestId: cleanId } });
+  await prisma.guest.delete({ where: { id: cleanId } });
   revalidatePath("/staff");
   return { ok: true };
 }
 
 export async function submitVoiceDistress(guestToken: string, formData: FormData) {
+  const cleanToken = guestToken?.trim();
+  if (!cleanToken) throw new Error("Guest token is required");
+
   const file = formData.get("audio") as File | null;
   if (!file) throw new Error("No audio provided");
 
-  const guest = await prisma.guest.findUnique({
-    where: { token: guestToken },
-    include: { room: true },
-  });
+  const [guest, audioBuffer] = await Promise.all([
+    prisma.guest.findUnique({
+      where: { token: cleanToken },
+      include: { room: true },
+    }),
+    file.arrayBuffer().then((b) => Buffer.from(b)),
+  ]);
+
   if (!guest) throw new Error("Guest not found");
 
   const assemblyKey = process.env.ASSEMBLYAI_API_KEY;
   if (!assemblyKey) throw new Error("ASSEMBLYAI_API_KEY missing");
-
-  const audioBuffer = Buffer.from(await file.arrayBuffer());
 
   const uploadRes = await fetch("https://api.assemblyai.com/v2/upload", {
     method: "POST",
@@ -337,9 +367,12 @@ export async function submitVoiceDistress(guestToken: string, formData: FormData
   }
   if (!transcript) throw new Error("Transcription timed out");
 
-  const triage = await triageDistress(transcript);
+  const [triage, existingIncident] = await Promise.all([
+    triageDistress(transcript),
+    prisma.incident.findFirst({ orderBy: { startedAt: "desc" } }),
+  ]);
 
-  let incident = await prisma.incident.findFirst({ orderBy: { startedAt: "desc" } });
+  let incident = existingIncident;
   if (!incident) {
     incident = await prisma.incident.create({
       data: {
@@ -351,40 +384,45 @@ export async function submitVoiceDistress(guestToken: string, formData: FormData
     });
   }
 
-  await prisma.distressMessage.create({
-    data: {
-      incidentId: incident.id,
-      guestId: guest.id,
-      roomId: guest.roomId,
-      text: transcript,
-      summary: triage.summary,
-      severity: triage.severity,
-      category: triage.category,
-    },
-  });
-
-  await prisma.guest.update({
-    where: { id: guest.id },
-    data: { status: "trapped" }
-  });
+  await Promise.all([
+    prisma.distressMessage.create({
+      data: {
+        incidentId: incident.id,
+        guestId: guest.id,
+        roomId: guest.roomId,
+        text: transcript,
+        summary: triage.summary,
+        severity: triage.severity,
+        category: triage.category,
+      },
+    }),
+    prisma.guest.update({
+      where: { id: guest.id },
+      data: { status: "trapped" }
+    }),
+  ]);
 
   revalidatePath("/staff");
   return { transcript, summary: triage.summary, severity: triage.severity, category: triage.category };
 }
 
 export async function submitTextDistress(guestToken: string, text: string) {
-  const trimmed = text.trim();
-  if (!trimmed) throw new Error("Message is empty");
+  const cleanToken = guestToken?.trim();
+  const trimmed = text?.trim();
+  if (!cleanToken || !trimmed) throw new Error("Token and message are required");
 
   const guest = await prisma.guest.findUnique({
-    where: { token: guestToken },
+    where: { token: cleanToken },
     include: { room: true },
   });
   if (!guest) throw new Error("Guest not found");
 
-  const triage = await triageDistress(trimmed);
+  const [triage, existingIncident] = await Promise.all([
+    triageDistress(trimmed),
+    prisma.incident.findFirst({ orderBy: { startedAt: "desc" } }),
+  ]);
 
-  let incident = await prisma.incident.findFirst({ orderBy: { startedAt: "desc" } });
+  let incident = existingIncident;
   if (!incident) {
     incident = await prisma.incident.create({
       data: {
@@ -396,23 +434,25 @@ export async function submitTextDistress(guestToken: string, text: string) {
     });
   }
 
-  await prisma.distressMessage.create({
-    data: {
-      incidentId: incident.id,
-      guestId: guest.id,
-      roomId: guest.roomId,
-      text: trimmed,
-      summary: triage.summary,
-      severity: triage.severity,
-      category: triage.category,
-    },
-  });
-
-  await prisma.guest.update({
-    where: { id: guest.id },
-    data: { status: "trapped" }
-  });
+  await Promise.all([
+    prisma.distressMessage.create({
+      data: {
+        incidentId: incident.id,
+        guestId: guest.id,
+        roomId: guest.roomId,
+        text: trimmed,
+        summary: triage.summary,
+        severity: triage.severity,
+        category: triage.category,
+      },
+    }),
+    prisma.guest.update({
+      where: { id: guest.id },
+      data: { status: "trapped" }
+    }),
+  ]);
 
   revalidatePath("/staff");
   return { transcript: trimmed, summary: triage.summary, severity: triage.severity, category: triage.category };
 }
+
