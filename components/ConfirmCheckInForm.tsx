@@ -24,10 +24,14 @@ export default function ConfirmCheckInForm({
   return (
     <form action={handleSubmit} className="p-8 pt-6 space-y-6">
       <div>
-        <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
+        <label
+          htmlFor="confirm-phone"
+          className="block text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2"
+        >
           <Phone className="w-3.5 h-3.5" /> CONFIRM PHONE
         </label>
         <input
+          id="confirm-phone"
           type="tel"
           name="phone"
           required

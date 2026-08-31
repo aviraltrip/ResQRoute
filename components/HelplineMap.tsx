@@ -30,6 +30,7 @@ export default function HelplineMap({ hotelLat, hotelLng, hotelName, helplines }
 
   useEffect(() => {
     let cancelled = false;
+    let activeMap: { remove?: () => void } | null = null;
     const el = containerRef.current;
     if (!el) return;
 
@@ -41,6 +42,7 @@ export default function HelplineMap({ hotelLat, hotelLng, hotelName, helplines }
         [hotelLat, hotelLng],
         14,
       );
+      activeMap = map;
       mapRef.current = map;
 
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -88,8 +90,7 @@ export default function HelplineMap({ hotelLat, hotelLng, hotelName, helplines }
 
     return () => {
       cancelled = true;
-      const m = mapRef.current as { remove?: () => void } | null;
-      m?.remove?.();
+      activeMap?.remove?.();
       mapRef.current = null;
     };
   }, [hotelLat, hotelLng, hotelName, helplines]);

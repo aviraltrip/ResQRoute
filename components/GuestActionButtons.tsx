@@ -34,6 +34,7 @@ export default function GuestActionButtons({ token }: { token: string }) {
   return (
     <section className="flex gap-3">
       <button 
+        type="button"
         onClick={handleSafe}
         disabled={loading || safeLoading}
         className={`flex-1 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all font-bold tracking-wide 
@@ -47,6 +48,7 @@ export default function GuestActionButtons({ token }: { token: string }) {
       </button>
       
       <button 
+        type="button"
         onClick={handlePanic}
         disabled={loading}
         className={`flex-1 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all font-bold tracking-wide

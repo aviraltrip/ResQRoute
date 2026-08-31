@@ -38,19 +38,29 @@ function severityStyle(sev: number) {
 }
 
 export default function VoiceDistress({ token }: { token: string }) {
-  const [mode, setMode] = useState<Mode>("voice");
-  const [recording, setRecording] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [result, setResult] = useState<TriageResult | null>(null);
-  const [text, setText] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [state, setState] = useState<{
+    mode: Mode;
+    recording: boolean;
+    processing: boolean;
+    result: TriageResult | null;
+    text: string;
+    error: string | null;
+  }>({
+    mode: "voice",
+    recording: false,
+    processing: false,
+    result: null,
+    text: "",
+    error: null,
+  });
+
+  const { mode, recording, processing, result, text, error } = state;
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
   function resetOutput() {
-    setError(null);
-    setResult(null);
+    setState((prev) => ({ ...prev, error: null, result: null }));
   }
 
   async function start() {
@@ -65,43 +75,51 @@ export default function VoiceDistress({ token }: { token: string }) {
       mr.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        setProcessing(true);
+        setState((prev) => ({ ...prev, processing: true }));
         try {
           const fd = new FormData();
           fd.append("audio", blob, "distress.webm");
           const res = await submitVoiceDistress(token, fd);
-          setResult(res);
+          setState((prev) => ({ ...prev, result: res, processing: false }));
         } catch (err) {
-          setError(err instanceof Error ? err.message : "Failed to process voice");
+          setState((prev) => ({
+            ...prev,
+            error: err instanceof Error ? err.message : "Failed to process voice",
+            processing: false,
+          }));
         }
-        setProcessing(false);
       };
       mr.start();
       mediaRecorderRef.current = mr;
-      setRecording(true);
+      setState((prev) => ({ ...prev, recording: true }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Microphone access denied");
+      setState((prev) => ({
+        ...prev,
+        error: err instanceof Error ? err.message : "Microphone access denied",
+      }));
     }
   }
 
   function stop() {
     mediaRecorderRef.current?.stop();
-    setRecording(false);
+    setState((prev) => ({ ...prev, recording: false }));
   }
 
   async function sendText(e: React.FormEvent) {
     e.preventDefault();
     if (!text.trim()) return;
     resetOutput();
-    setProcessing(true);
+    setState((prev) => ({ ...prev, processing: true }));
     try {
       const res = await submitTextDistress(token, text);
-      setResult(res);
-      setText("");
+      setState((prev) => ({ ...prev, result: res, text: "", processing: false }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send message");
+      setState((prev) => ({
+        ...prev,
+        error: err instanceof Error ? err.message : "Failed to send message",
+        processing: false,
+      }));
     }
-    setProcessing(false);
   }
 
   const status = recording
@@ -121,9 +139,9 @@ export default function VoiceDistress({ token }: { token: string }) {
 
       <div className="grid grid-cols-2 gap-1 bg-slate-100 border border-zinc-200 rounded-full p-1 mb-5 w-full max-w-[240px]">
         <button
+          type="button"
           onClick={() => {
-            setMode("voice");
-            resetOutput();
+            setState((prev) => ({ ...prev, mode: "voice", error: null, result: null }));
           }}
           disabled={recording || processing}
           className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-1.5 rounded-full transition-all ${
@@ -135,9 +153,9 @@ export default function VoiceDistress({ token }: { token: string }) {
           <Mic className="w-3.5 h-3.5" /> Voice
         </button>
         <button
+          type="button"
           onClick={() => {
-            setMode("text");
-            resetOutput();
+            setState((prev) => ({ ...prev, mode: "text", error: null, result: null }));
           }}
           disabled={recording || processing}
           className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-1.5 rounded-full transition-all ${
@@ -154,6 +172,7 @@ export default function VoiceDistress({ token }: { token: string }) {
         <div className="relative w-24 h-24 mb-4 flex items-center justify-center">
           {recording && <div className="absolute inset-0 bg-red-500/25 rounded-full animate-ping" />}
           <button
+            type="button"
             onClick={recording ? stop : start}
             disabled={processing}
             className="relative w-16 h-16 bg-gradient-to-b from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 rounded-full flex items-center justify-center shadow-lg shadow-red-500/25 text-white focus:outline-none focus:scale-95 transition-all disabled:opacity-60"
@@ -171,7 +190,10 @@ export default function VoiceDistress({ token }: { token: string }) {
         <form onSubmit={sendText} className="w-full mb-4 flex flex-col gap-2">
           <textarea
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setState((prev) => ({ ...prev, text: val }));
+            }}
             disabled={processing}
             rows={3}
             placeholder="e.g., Smoke coming under the door, I can't breathe well..."

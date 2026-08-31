@@ -12,6 +12,13 @@ type GuestWithRoom = Guest & {
   room?: Room;
 };
 
+const STAT_CARD_COLOR_MAP: Record<string, { bg: string; text: string; border: string; iconBg: string }> = {
+  emerald: { bg: "bg-emerald-50/50", text: "text-emerald-900", border: "border-emerald-100", iconBg: "bg-emerald-100" },
+  red: { bg: "bg-red-50/50", text: "text-red-900", border: "border-red-100", iconBg: "bg-red-100" },
+  blue: { bg: "bg-blue-50/50", text: "text-blue-900", border: "border-blue-100", iconBg: "bg-blue-100" },
+  slate: { bg: "bg-slate-50/50", text: "text-slate-900", border: "border-slate-200", iconBg: "bg-slate-100" },
+};
+
 export default function StaffDashboardClient({ initialGuests, initialMessages, rooms }: { initialGuests: GuestWithRoom[], initialMessages: DistressMessage[], rooms: Room[] }) {
   const [guests, setGuests] = useState<GuestWithRoom[]>(initialGuests);
   const [messages, setMessages] = useState(initialMessages);
@@ -55,7 +62,7 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
       supabase.removeChannel(guestSub);
       supabase.removeChannel(distressSub);
     };
-  }, []);
+  }, [rooms]);
 
   const stats = {
     safe: guests.filter(g => g.status === 'safe').length,
@@ -89,7 +96,7 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
         </div>
         <div className="flex gap-4 items-center">
           <PreRegisterDialog rooms={rooms} />
-          <Button variant="outline" className="border-zinc-200 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 shadow-sm">End Incident</Button>
+          <Button type="button" variant="outline" className="border-zinc-200 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 shadow-sm">End Incident</Button>
           
           <div className="flex bg-white border border-red-200 rounded-lg overflow-hidden shadow-sm">
             <select 
@@ -101,6 +108,7 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
               {rooms.map(r => <option className="text-black" key={r.id} value={r.id}>{r.number}</option>)}
             </select>
             <Button 
+              type="button"
               disabled={loadingAction || !selectedRoom}
               onClick={async () => {
                 setLoadingAction(true);
@@ -142,6 +150,7 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
                  {guests.map((guest) => (
                    <div key={guest.id} className="relative bg-white border border-zinc-200 rounded-xl p-4 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-500 shadow-sm">
                      <button
+                       type="button"
                        title="Check out / remove from roster"
                        onClick={async () => {
                          if (!confirm(`Remove ${guest.name} from the roster?`)) return;
@@ -179,6 +188,7 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
                      </Badge>
                      {guest.status !== 'safe' && (
                        <Button 
+                         type="button"
                          variant="outline" 
                          size="sm" 
                          className="mt-3 w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 hover:border-emerald-300 h-auto py-1 shadow-sm transition-colors"
@@ -219,8 +229,16 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
               {activeMessages.map((msg) => (
                 <div 
                   key={msg.id} 
+                  role="button"
+                  tabIndex={0}
                   onClick={() => window.location.href = `/helpline?roomId=${msg.roomId}`}
-                  className={`p-4 rounded-xl border animate-in slide-in-from-right fade-in bg-red-50 border-red-100 shadow-sm transition-all hover:shadow-md cursor-pointer group`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      window.location.href = `/helpline?roomId=${msg.roomId}`;
+                    }
+                  }}
+                  className={`p-4 rounded-xl border animate-in slide-in-from-right fade-in bg-red-50 border-red-100 shadow-sm transition-all hover:shadow-md cursor-pointer group focus:outline-none focus:ring-2 focus:ring-red-500`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -254,14 +272,7 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
 }
 
 function StatCard({ icon, value, label, color }: { icon: React.ReactNode, value: number, label: string, color: string }) {
-  const colorMap: Record<string, { bg: string, text: string, border: string, iconBg: string }> = {
-    emerald: { bg: "bg-emerald-50/50", text: "text-emerald-900", border: "border-emerald-100", iconBg: "bg-emerald-100" },
-    red: { bg: "bg-red-50/50", text: "text-red-900", border: "border-red-100", iconBg: "bg-red-100" },
-    blue: { bg: "bg-blue-50/50", text: "text-blue-900", border: "border-blue-100", iconBg: "bg-blue-100" },
-    slate: { bg: "bg-slate-50/50", text: "text-slate-900", border: "border-slate-200", iconBg: "bg-slate-100" },
-  };
-  
-  const theme = colorMap[color];
+  const theme = STAT_CARD_COLOR_MAP[color] || STAT_CARD_COLOR_MAP.slate;
   
   return (
     <div className={`bg-white border ${theme.border} rounded-2xl p-5 flex flex-col shadow-sm relative overflow-hidden group`}>

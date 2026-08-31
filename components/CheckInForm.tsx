@@ -34,10 +34,14 @@ export default function CheckInForm({ rooms }: { rooms: Room[] }) {
       <form action={handleSubmit} className="p-8 pt-6 space-y-6 relative z-10">
 
         <div>
-          <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
+          <label
+            htmlFor="checkin-name"
+            className="block text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2"
+          >
             <User className="w-3.5 h-3.5" /> FULL NAME
           </label>
           <input
+            id="checkin-name"
             type="text"
             name="name"
             required
@@ -47,10 +51,14 @@ export default function CheckInForm({ rooms }: { rooms: Room[] }) {
         </div>
 
         <div>
-          <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
+          <label
+            htmlFor="checkin-phone"
+            className="block text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2"
+          >
             <Phone className="w-3.5 h-3.5" /> PHONE NUMBER
           </label>
           <input
+            id="checkin-phone"
             type="tel"
             name="phone"
             required
@@ -60,10 +68,14 @@ export default function CheckInForm({ rooms }: { rooms: Room[] }) {
         </div>
 
         <div>
-          <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
+          <label
+            htmlFor="checkin-room"
+            className="block text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2"
+          >
             <DoorOpen className="w-3.5 h-3.5" /> ROOM SELECTION
           </label>
           <select
+            id="checkin-room"
             name="roomId"
             required
             defaultValue=""
@@ -72,13 +84,16 @@ export default function CheckInForm({ rooms }: { rooms: Room[] }) {
             <option value="" disabled>
               Select an available room
             </option>
-            {rooms
-              .filter(r => !r.number.includes("EXIT") && !r.number.includes("LOBBY"))
-              .map((room) => (
-                <option key={room.id} value={room.id}>
-                  Room {room.number} (Floor {room.floor})
-                </option>
-              ))}
+            {rooms.reduce<React.ReactNode[]>((acc, room) => {
+              if (!room.number.includes("EXIT") && !room.number.includes("LOBBY")) {
+                acc.push(
+                  <option key={room.id} value={room.id}>
+                    Room {room.number} (Floor {room.floor})
+                  </option>
+                );
+              }
+              return acc;
+            }, [])}
           </select>
         </div>
 

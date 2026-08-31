@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useSyncExternalStore } from 'react';
 import { RouteStep } from '@/lib/routing';
 import { Room } from '@prisma/client';
 import { Footprints, MousePointerClick, Flame } from 'lucide-react';
@@ -242,13 +242,11 @@ function findShortestPath(startId: string, exitIds: string[]) {
 }
 
 export default function EvacuationMap({ route, floorRooms, currentFloor }: EvacuationMapProps) {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   
   // Try to default to the backend route start if possible, otherwise 312
   const defaultStart = route && route[0] ? route[0].roomNumber.match(/\d{2}$/) ? `3${route[0].roomNumber.match(/\d{2}$/)![0]}` : '312' : '312';
   const [startRoom, setStartRoom] = useState<string>(defaultStart);
-
-  useEffect(() => setMounted(true), []);
 
   const { path: activePathIds, exitId: activeExitId, distance } = useMemo(() => {
     return findShortestPath(startRoom, ['EXIT_A', 'EXIT_B']);
@@ -447,11 +445,11 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
         </svg>
       </div>
 
-      <style dangerouslySetInnerHTML={{__html: `
+      <style>{`
         @keyframes dash {
           to { stroke-dashoffset: -30; }
         }
-      `}} />
+      `}</style>
       
       {/* Calculation Results (compact) */}
       <div className="absolute bottom-3 right-3 flex flex-col gap-3 pointer-events-none">

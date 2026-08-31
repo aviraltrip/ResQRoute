@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -21,46 +22,65 @@ type Issued = {
 };
 
 export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [issued, setIssued] = useState<Issued | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<{
+    open: boolean;
+    loading: boolean;
+    error: string | null;
+    issued: Issued | null;
+    copied: boolean;
+  }>({
+    open: false,
+    loading: false,
+    error: null,
+    issued: null,
+    copied: false,
+  });
+
+  const { open, loading, error, issued, copied } = state;
 
   const guestRooms = rooms.filter(
     (r) => !r.number.includes("EXIT") && !r.number.includes("LOBBY"),
   );
 
   function reset() {
-    setIssued(null);
-    setError(null);
-    setCopied(false);
+    setState((prev) => ({
+      ...prev,
+      issued: null,
+      error: null,
+      copied: false,
+    }));
   }
 
   async function handleSubmit(formData: FormData) {
-    setError(null);
-    setLoading(true);
+    setState((prev) => ({ ...prev, error: null, loading: true }));
     try {
       const res = await preRegisterGuest(formData);
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
-      setIssued({
-        url: `${origin}/check-in/${res.setupToken}`,
-        guestName: res.guestName,
-        roomNumber: res.roomNumber,
-      });
+      setState((prev) => ({
+        ...prev,
+        loading: false,
+        issued: {
+          url: `${origin}/check-in/${res.setupToken}`,
+          guestName: res.guestName,
+          roomNumber: res.roomNumber,
+        },
+      }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to pre-register");
+      setState((prev) => ({
+        ...prev,
+        loading: false,
+        error: err instanceof Error ? err.message : "Failed to pre-register",
+      }));
     }
-    setLoading(false);
   }
 
   async function copyLink() {
     if (!issued) return;
     try {
       await navigator.clipboard.writeText(issued.url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
+      setState((prev) => ({ ...prev, copied: true }));
+      setTimeout(() => setState((prev) => ({ ...prev, copied: false })), 1800);
     } catch {
       /* clipboard blocked, ignore */
     }
@@ -74,13 +94,14 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
     <Dialog
       open={open}
       onOpenChange={(o) => {
-        setOpen(o);
+        setState((prev) => ({ ...prev, open: o }));
         if (!o) reset();
       }}
     >
       <DialogTrigger
         render={
           <Button
+            type="button"
             variant="outline"
             className="border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 hover:text-blue-800 shadow-sm"
           />
@@ -105,10 +126,14 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
         {!issued ? (
           <form action={handleSubmit} className="p-6 space-y-5">
             <div>
-              <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2">
+              <label
+                htmlFor="prereg-name"
+                className="block text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2"
+              >
                 Guest Name
               </label>
               <input
+                id="prereg-name"
                 type="text"
                 name="name"
                 required
@@ -118,10 +143,14 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2">
+              <label
+                htmlFor="prereg-phone"
+                className="block text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2"
+              >
                 Phone
               </label>
               <input
+                id="prereg-phone"
                 type="tel"
                 name="phone"
                 required
@@ -131,10 +160,14 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2">
+              <label
+                htmlFor="prereg-room"
+                className="block text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2"
+              >
                 Allocate Room
               </label>
               <select
+                id="prereg-room"
                 name="roomId"
                 required
                 defaultValue=""
@@ -151,8 +184,12 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
               </select>
             </div>
 
-            <label className="flex items-center gap-3 p-3 bg-orange-50 border border-orange-100 rounded-xl cursor-pointer">
+            <label
+              htmlFor="prereg-accessibility"
+              className="flex items-center gap-3 p-3 bg-orange-50 border border-orange-100 rounded-xl cursor-pointer"
+            >
               <input
+                id="prereg-accessibility"
                 type="checkbox"
                 name="accessibility"
                 className="w-5 h-5 rounded border-orange-200 text-orange-500 focus:ring-orange-500 cursor-pointer bg-white"
@@ -189,22 +226,28 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
             </div>
 
             <div className="flex justify-center bg-zinc-50 border border-zinc-200 rounded-xl p-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={qrSrc}
-                alt="Check-in QR"
-                width={240}
-                height={240}
-                className="rounded-lg bg-white"
-              />
+              {qrSrc && (
+                <Image
+                  src={qrSrc}
+                  alt="Check-in QR code"
+                  width={240}
+                  height={240}
+                  unoptimized
+                  className="rounded-lg bg-white"
+                />
+              )}
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2">
+              <label
+                htmlFor="prereg-share-url"
+                className="block text-[10px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2"
+              >
                 Or share this link
               </label>
               <div className="flex gap-2">
                 <input
+                  id="prereg-share-url"
                   readOnly
                   value={issued.url}
                   onFocus={(e) => e.currentTarget.select()}
@@ -237,7 +280,7 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
               <Button
                 type="button"
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={() => setOpen(false)}
+                onClick={() => setState((prev) => ({ ...prev, open: false }))}
               >
                 Done
               </Button>
@@ -248,3 +291,4 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
     </Dialog>
   );
 }
+
