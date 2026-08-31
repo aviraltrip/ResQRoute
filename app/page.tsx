@@ -1,9 +1,15 @@
 import React from "react";
+import type { Metadata } from "next";
 import { ShieldAlert, Heart, UserSquare2 } from "lucide-react";
 import { WebGLShader } from "@/components/ui/web-gl-shader";
 import { AnimatedCard } from "@/components/ui/animated-card";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "ResQRoute — Intelligent Emergency Evacuation & Distress Triage",
+  description: "Real-time AI-assisted emergency response, live distress triage, and dynamic room-by-room evacuation routing.",
+};
 
 export default async function DemoPortal() {
   return (

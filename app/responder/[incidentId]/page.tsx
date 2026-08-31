@@ -1,8 +1,13 @@
 import React from "react";
+import type { Metadata } from "next";
 import { Badge } from "@/components/ui/badge";
 import { Flame, Navigation, AlertOctagon, HeartPulse, PersonStanding, MoveRight, Eye } from "lucide-react";
-
 import { prisma } from "@/lib/prisma";
+
+export const metadata: Metadata = {
+  title: "Tactical Responder View — ResQRoute",
+  description: "First responder emergency tactical map and extraction priority queue.",
+};
 
 export default async function ResponderView({ params }: { params: Promise<{ incidentId: string }> }) {
   const { incidentId } = await params;
@@ -16,35 +21,49 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
 
   const originRoom = incident.originRoom.number;
   
-  // Real priority targets
-  const allGuests = await prisma.guest.findMany({
-    include: { room: true }
-  });
+  // Real priority targets and floor queries in parallel
+  const [allGuests, distress, floorRooms] = await Promise.all([
+    prisma.guest.findMany({
+      include: { room: true }
+    }),
+    prisma.distressMessage.findMany({
+      where: { incidentId },
+      include: { room: true },
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.room.findMany({
+      where: { floor: incident.originRoom.floor }
+    })
+  ]);
 
-  const priorityEvacs = allGuests
-    .filter(g => g.status !== "safe" && (g.accessibilityFlag || g.room.floor === incident.originRoom.floor))
-    .map(g => ({
-      id: g.id,
-      name: g.name,
-      room: g.room.number,
-      floor: g.room.floor,
-      x: g.room.x,
-      y: g.room.y,
-      status: g.status,
-      reason: g.accessibilityFlag ? "Accessibility Flag" : "Danger Proximity",
-      flag: g.accessibilityFlag ? "mobility" : "fire-exposure"
-    }));
+  const priorityEvacs = allGuests.reduce<{
+    id: string;
+    name: string;
+    room: string;
+    floor: number;
+    x: number;
+    y: number;
+    status: string;
+    reason: string;
+    flag: string;
+  }[]>((acc, g) => {
+    if (g.status !== "safe" && (g.accessibilityFlag || g.room.floor === incident.originRoom.floor)) {
+      acc.push({
+        id: g.id,
+        name: g.name,
+        room: g.room.number,
+        floor: g.room.floor,
+        x: g.room.x,
+        y: g.room.y,
+        status: g.status,
+        reason: g.accessibilityFlag ? "Accessibility Flag" : "Danger Proximity",
+        flag: g.accessibilityFlag ? "mobility" : "fire-exposure"
+      });
+    }
+    return acc;
+  }, []);
 
-  const distress = await prisma.distressMessage.findMany({
-    where: { incidentId },
-    include: { room: true },
-    orderBy: { createdAt: 'desc' }
-  });
-
-  const floorRooms = await prisma.room.findMany({
-    where: { floor: incident.originRoom.floor }
-  });
-  
+  const floorPriorityEvacs = priorityEvacs.filter(g => g.floor === incident.originRoom.floor);
   const totalSafe = allGuests.filter(g => g.status === 'safe').length;
   const dangerZoneCount = priorityEvacs.length;
 
@@ -147,9 +166,9 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
               </h2>
               <div className="flex gap-2">
                  {['Floor 1', 'Floor 2', 'Floor 3'].map(f => (
-                   <button key={f} className="px-3 py-1 text-xs font-bold text-zinc-500 bg-slate-50 hover:bg-slate-100 border border-zinc-200 rounded transition-colors uppercase tracking-wider">{f}</button>
+                   <button key={f} type="button" className="px-3 py-1 text-xs font-bold text-zinc-600 bg-slate-50 hover:bg-slate-100 border border-zinc-200 rounded transition-colors uppercase tracking-wider">{f}</button>
                  ))}
-                 <button className="px-3 py-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 border border-blue-500 rounded uppercase tracking-wider shadow-sm shadow-blue-500/30">Floor 4</button>
+                 <button type="button" className="px-3 py-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 border border-blue-500 rounded uppercase tracking-wider shadow-sm shadow-blue-500/30">Floor 4</button>
               </div>
             </div>
 
@@ -188,7 +207,7 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
                    </g>
 
                    {/* Priority Guests */}
-                   {priorityEvacs.filter(g => g.floor === incident.originRoom.floor).map(v => (
+                   {floorPriorityEvacs.map(v => (
                      <g key={v.id} style={{ transform: `translate(${v.x * 400}px, ${v.y * 200}px)` }}>
                        <circle cx="-10" cy="-10" r="4" fill={v.status === 'trapped' ? "#ea580c" : "#ca8a04"} />
                        <circle cx="-10" cy="-10" r="7" stroke={v.status === 'trapped' ? "#ea580c" : "#ca8a04"} strokeDasharray="2 2" className="animate-spin-slow" />

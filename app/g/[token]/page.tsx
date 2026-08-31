@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mic, Map, ShieldCheck, AlertTriangle, ArrowRight, ActivitySquare, AlertOctagon, LogOut } from "lucide-react";
@@ -9,25 +10,32 @@ import { computeEvacuationRoute } from "@/lib/routing";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import EvacuationMap from "@/components/EvacuationMap";
 
+export const metadata: Metadata = {
+  title: "Live Evacuation Dashboard — ResQRoute",
+  description: "Real-time emergency status, dynamic evacuation routes, and distress communication.",
+};
+
 export default async function GuestView({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const guest = await prisma.guest.findUnique({
-    where: { token },
-    include: { room: true }
-  });
+  const [guest, incident] = await Promise.all([
+    prisma.guest.findUnique({
+      where: { token },
+      include: { room: true }
+    }),
+    prisma.incident.findFirst({
+      orderBy: { startedAt: 'desc' }
+    })
+  ]);
 
   if (!guest) return <div>Invalid Session</div>;
 
-  const incident = await prisma.incident.findFirst({
-    orderBy: { startedAt: 'desc' }
-  });
-
   const hazardRooms = incident ? [incident.originRoomId] : [];
-  const route = await computeEvacuationRoute(guest.roomId, hazardRooms);
-  
-  const floorRooms = await prisma.room.findMany({
-    where: { floor: guest.room.floor }
-  });
+  const [route, floorRooms] = await Promise.all([
+    computeEvacuationRoute(guest.roomId, hazardRooms),
+    prisma.room.findMany({
+      where: { floor: guest.room.floor }
+    })
+  ]);
   
   return (
     <div className="min-h-screen bg-slate-50 font-sans flex items-center justify-center p-0 sm:p-6">
@@ -103,7 +111,7 @@ export default async function GuestView({ params }: { params: Promise<{ token: s
                     <p className="text-sm text-zinc-500 mt-1">Shelter in place. Responders are notified.</p>
                   </div>
                 ) : route.map((step, idx) => (
-                  <div key={idx} className="relative flex items-center mb-6 last:mb-0 group">
+                  <div key={`${step.roomId}-${step.floor}-${idx}`} className="relative flex items-center mb-6 last:mb-0 group">
                     {/* Node Circle */}
                     <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 shrink-0 z-10 transition-colors ${
                       idx === 0

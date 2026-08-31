@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Phone, ShieldAlert, ArrowLeft, MapPin, Flame, Cross, Shield } from "lucide-react";
 import { prisma } from "@/lib/prisma";
@@ -13,6 +14,11 @@ import {
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+export const metadata: Metadata = {
+  title: "Emergency Helplines & Nearby Services — ResQRoute",
+  description: "Locate nearby hospitals, fire stations, and emergency responders in real time.",
+};
 
 import HelplineMapClient from "@/components/HelplineMapClient";
 
@@ -40,8 +46,10 @@ export default async function HelplinePage(props: { searchParams: Promise<{ room
   const searchParams = await props.searchParams;
   const roomId = searchParams?.roomId;
 
-  const hotel = await prisma.hotel.findFirst();
-  const incident = await prisma.incident.findFirst({ orderBy: { startedAt: "desc" } });
+  const [hotel, incident] = await Promise.all([
+    prisma.hotel.findFirst(),
+    prisma.incident.findFirst({ orderBy: { startedAt: "desc" } }),
+  ]);
 
   const latestMessage = incident
     ? await prisma.distressMessage.findFirst({

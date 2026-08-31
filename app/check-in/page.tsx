@@ -1,9 +1,15 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { QrCode, ShieldAlert } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Guest Portal & Check-In — ResQRoute",
+  description: "Secure digital guest pass and emergency access point.",
+};
 
 export default async function CheckInPage() {
   const cookieStore = await cookies();

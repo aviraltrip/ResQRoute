@@ -1,10 +1,16 @@
 import React from "react";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import ConfirmCheckInForm from "@/components/ConfirmCheckInForm";
 import { ShieldCheck } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Confirm Check-In — ResQRoute",
+  description: "Confirm guest details and initialize room safety pass.",
+};
 
 export default async function ConfirmCheckInPage({
   params,
