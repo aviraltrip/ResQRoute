@@ -26,7 +26,6 @@ function pinSvg(color: string) {
 
 export default function HelplineMap({ hotelLat, hotelLng, hotelName, helplines }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<unknown>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,7 +42,6 @@ export default function HelplineMap({ hotelLat, hotelLng, hotelName, helplines }
         14,
       );
       activeMap = map;
-      mapRef.current = map;
 
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
@@ -91,7 +89,6 @@ export default function HelplineMap({ hotelLat, hotelLng, hotelName, helplines }
     return () => {
       cancelled = true;
       activeMap?.remove?.();
-      mapRef.current = null;
     };
   }, [hotelLat, hotelLng, hotelName, helplines]);
 

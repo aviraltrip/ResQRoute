@@ -227,18 +227,11 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
                 </div>
               )}
               {activeMessages.map((msg) => (
-                <div 
+                <button 
+                  type="button"
                   key={msg.id} 
-                  role="button"
-                  tabIndex={0}
                   onClick={() => window.location.href = `/helpline?roomId=${msg.roomId}`}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      window.location.href = `/helpline?roomId=${msg.roomId}`;
-                    }
-                  }}
-                  className={`p-4 rounded-xl border animate-in slide-in-from-right fade-in bg-red-50 border-red-100 shadow-sm transition-all hover:shadow-md cursor-pointer group focus:outline-none focus:ring-2 focus:ring-red-500`}
+                  className={`w-full text-left p-4 rounded-xl border animate-in slide-in-from-right fade-in bg-red-50 border-red-100 shadow-sm transition-all hover:shadow-md cursor-pointer group focus:outline-none focus:ring-2 focus:ring-red-500`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -260,7 +253,7 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
                   <div className="flex justify-end">
                     <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">{msg.category}</span>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>

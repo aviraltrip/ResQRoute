@@ -189,6 +189,7 @@ export default function VoiceDistress({ token }: { token: string }) {
       ) : (
         <form onSubmit={sendText} className="w-full mb-4 flex flex-col gap-2">
           <textarea
+            aria-label="Distress message description"
             value={text}
             onChange={(e) => {
               const val = e.target.value;

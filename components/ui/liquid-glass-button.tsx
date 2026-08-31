@@ -40,20 +40,20 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
+  ref?: React.Ref<HTMLButtonElement>
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
-    return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    )
-  }
-)
+function Button({ className, variant, size, asChild = false, ref, ...props }: ButtonProps) {
+  const Comp = asChild ? Slot : "button"
+  return (
+    <Comp
+      type={asChild ? undefined : (props.type || "button")}
+      className={cn(buttonVariants({ variant, size, className }))}
+      ref={ref}
+      {...props}
+    />
+  )
+}
 Button.displayName = "Button"
 
 export { Button, buttonVariants, liquidbuttonVariants, LiquidButton }
@@ -183,9 +183,10 @@ type ColorVariant =
   | "gold"
   | "bronze";
  
-interface MetalButtonProps
+export interface MetalButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ColorVariant;
+  ref?: React.Ref<HTMLButtonElement>;
 }
  
 const colorVariants: Record<
@@ -307,17 +308,21 @@ const ShineEffect = ({ isPressed }: { isPressed: boolean }) => {
   );
 };
  
-export const MetalButton = React.forwardRef<
-  HTMLButtonElement,
-  MetalButtonProps
->(({ children, className, variant = "default", ...props }, ref) => {
+export function MetalButton({
+  children,
+  className,
+  variant = "default",
+  ref,
+  type = "button",
+  ...props
+}: MetalButtonProps) {
   const [isPressed, setIsPressed] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
-  const [isTouchDevice, setIsTouchDevice] = React.useState(false);
- 
-  React.useEffect(() => {
-    setIsTouchDevice("ontouchstart" in window || navigator.maxTouchPoints > 0);
-  }, []);
+  const isTouchDevice = React.useSyncExternalStore(
+    () => () => {},
+    () => typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0),
+    () => false
+  );
  
   const buttonText = children || "Button";
   const variants = metalButtonVariants(
@@ -357,6 +362,7 @@ export const MetalButton = React.forwardRef<
       <div className={variants.inner} style={variants.innerStyle}></div>
       <button
         ref={ref}
+        type={type}
         className={cn(variants.button, className)}
         style={variants.buttonStyle}
         {...props}
@@ -376,6 +382,6 @@ export const MetalButton = React.forwardRef<
       </button>
     </div>
   );
-});
+}
  
 MetalButton.displayName = "MetalButton";
