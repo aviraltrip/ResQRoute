@@ -64,7 +64,7 @@ export async function triageDistress(text: string): Promise<Triage> {
   } catch {
     const m = content.match(/\{[\s\S]*\}/);
     if (m) {
-      try { parsed = JSON.parse(m[0]); } catch { /* ignore */ }
+      try { parsed = JSON.parse(m[0]); } catch {}
     }
   }
 

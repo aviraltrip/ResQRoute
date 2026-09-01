@@ -11,7 +11,6 @@ export const metadata: Metadata = {
 };
 
 export default async function StaffDashboard() {
-  // Fetch initial active state for Staff concurrently
   const [guests, messages, rooms] = await Promise.all([
     prisma.guest.findMany({
       include: { room: true },

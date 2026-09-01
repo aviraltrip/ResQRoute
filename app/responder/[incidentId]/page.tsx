@@ -21,7 +21,6 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
 
   const originRoom = incident.originRoom.number;
   
-  // Real priority targets and floor queries in parallel
   const [allGuests, distress, floorRooms] = await Promise.all([
     prisma.guest.findMany({
       include: { room: true }
@@ -70,11 +69,9 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
   return (
     <div className="min-h-screen bg-slate-50 text-zinc-900 flex flex-col font-mono selection:bg-blue-100 relative overflow-hidden">
 
-      {/* Background Ambience */}
       <div className="absolute top-0 right-0 w-[800px] h-[400px] bg-red-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-500/5 blur-[150px] pointer-events-none" />
 
-      {/* Tactical Header */}
       <header className="bg-white/80 backdrop-blur-xl border-b border-zinc-200 p-4 flex justify-between items-center z-10 sticky top-0 shadow-sm">
 
         <div className="flex items-center gap-5 z-10 w-full">
@@ -103,13 +100,10 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
         </div>
       </header>
 
-      {/* Main Tablet Layout */}
       <main className="flex-1 p-5 grid grid-cols-12 gap-5 h-[calc(100vh-5rem)] z-10">
 
-        {/* Left Column: Priority Targets & Live Feed */}
         <div className="col-span-4 flex flex-col gap-5 overflow-hidden h-full">
 
-          {/* High Priority List */}
           <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm flex flex-col shrink-0">
             <div className="p-3 bg-red-50 border-b border-red-200 flex items-center gap-3">
               <AlertOctagon className="w-5 h-5 text-red-600 animate-pulse" />
@@ -134,7 +128,6 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
             </ul>
           </div>
 
-          {/* Distress Feed */}
           <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden flex-1 flex flex-col shadow-sm">
             <div className="p-3 bg-blue-50 border-b border-blue-200 flex items-center gap-3 shrink-0">
               <HeartPulse className="w-5 h-5 text-blue-600" />
@@ -154,11 +147,9 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
           </div>
         </div>
 
-        {/* Right Column: Blueprint View */}
         <div className="col-span-8 flex flex-col">
           <div className="bg-white border border-zinc-200 rounded-xl flex-1 h-full overflow-hidden flex flex-col relative shadow-sm">
 
-            {/* Top Toolbar */}
             <div className="p-3 border-b border-zinc-200 flex items-center justify-between shrink-0 bg-white/90 backdrop-blur-md absolute w-full top-0 z-20">
               <h2 className="text-sm uppercase tracking-widest text-blue-700 font-bold flex items-center gap-2">
                 <Navigation className="w-4 h-4" />
@@ -172,10 +163,8 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
               </div>
             </div>
 
-            {/* Tactical Grid Body */}
             <div className="flex-1 flex items-center justify-center bg-slate-50 mt-12 pb-4 relative">
 
-              {/* Technical Grid Background */}
               <div className="absolute inset-0"
                    style={{
                      backgroundImage: `
@@ -190,23 +179,18 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
 
               <div className="relative w-full max-w-3xl aspect-[2/1] border-2 border-blue-200 bg-blue-50/50 rounded-lg overflow-hidden z-10 shadow-[0_0_50px_rgba(59,130,246,0.08)] flex items-center justify-center">
 
-                 {/* Blueprint Graphic */}
                  <svg width="80%" height="80%" viewBox="0 0 400 200" fill="none" stroke="#93c5fd" strokeWidth="2">
-                   {/* Dynamic Map Nodes */}
                    {floorRooms.map(r => (
                      <g key={r.id} className={`translate-x-[${r.x * 400}px] translate-y-[${r.y * 200}px]`}>
-                       {/* Room Border if needed */}
                      </g>
                    ))}
 
-                   {/* Origin Ping */}
                    <g style={{ transform: `translate(${incident.originRoom.x * 400}px, ${incident.originRoom.y * 200}px)` }}>
                      <circle cx="0" cy="0" r="12" fill="rgba(239,68,68,0.2)" className="animate-ping" />
                      <circle cx="0" cy="0" r="6" fill="#dc2626" />
                      <text x="12" y="4" fontSize="12" fill="#dc2626" stroke="none" className="font-sans font-bold drop-shadow-md">{incident.originRoom.number}</text>
                    </g>
 
-                   {/* Priority Guests */}
                    {floorPriorityEvacs.map(v => (
                      <g key={v.id} style={{ transform: `translate(${v.x * 400}px, ${v.y * 200}px)` }}>
                        <circle cx="-10" cy="-10" r="4" fill={v.status === 'trapped' ? "#ea580c" : "#ca8a04"} />
@@ -216,7 +200,6 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
                    ))}
                  </svg>
 
-                 {/* Corner Accents */}
                  <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-blue-500" />
                  <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-blue-500" />
                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-blue-500" />

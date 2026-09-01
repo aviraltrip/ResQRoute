@@ -16,7 +16,6 @@ export default async function DemoPortal() {
     <div className="relative flex min-h-screen w-full flex-col items-center bg-white overflow-x-hidden font-sans">
       <WebGLShader />
 
-      {/* Navbar / Header */}
       <header className="w-full flex items-center justify-between p-6 max-w-6xl mx-auto z-10">
         <div className="flex items-center gap-2">
           <div className="flex items-center justify-center p-2 rounded-xl border border-red-100 shadow-sm bg-white">
@@ -26,22 +25,16 @@ export default async function DemoPortal() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 pt-16 pb-24 w-full max-w-4xl mx-auto">
 
-
-
-        {/* Title */}
         <h1 className="mb-6 text-zinc-900 text-center text-5xl sm:text-7xl font-extrabold tracking-tighter md:text-[clamp(3rem,8vw,6rem)] leading-tight">
           Instant.<span className="text-red-600 italic pr-1">Help</span> When It<br />Matters Most
         </h1>
 
-        {/* Subtitle */}
         <p className="text-zinc-500 px-6 text-center text-sm md:text-lg max-w-2xl mb-16">
           From live triage to room-by-room evacuation, ResQRoute delivers the real-time clarity that saves lives in the first critical minutes.
         </p>
 
-        {/* Animated Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl mx-auto">
           
           <AnimatedCard 

@@ -25,9 +25,7 @@ type MapRoom = {
   corridorNodeY: number;
 };
 
-// Generate static layout map based on reference image
 const mapRooms: MapRoom[] = [];
-// Top (301 - 320)
 for (let i = 0; i < 20; i++) {
   mapRooms.push({
     id: `3${(i + 1).toString().padStart(2, '0')}`,
@@ -36,7 +34,6 @@ for (let i = 0; i < 20; i++) {
     corridorNodeX: 180 + i * 42 + 20, corridorNodeY: 220
   });
 }
-// Left (321 - 325)
 for (let i = 0; i < 5; i++) {
   mapRooms.push({
     id: `3${21 + i}`,
@@ -45,7 +42,6 @@ for (let i = 0; i < 5; i++) {
     corridorNodeX: 200, corridorNodeY: 260 + i * 64 + 30
   });
 }
-// Bottom (328 - 341) - 14 rooms
 for (let i = 0; i < 14; i++) {
   mapRooms.push({
     id: `3${28 + i}`,
@@ -54,7 +50,6 @@ for (let i = 0; i < 14; i++) {
     corridorNodeX: 270 + i * 50 + 22.5, corridorNodeY: 600
   });
 }
-// Right (342 - 346)
 for (let i = 0; i < 5; i++) {
   mapRooms.push({
     id: `3${42 + i}`,
@@ -112,11 +107,9 @@ const coreTiles: CoreTile[] = [
   },
 ];
 
-// Fire hazards — any graph edge whose segment comes within HAZARD_BLOCK_RADIUS
-// of a hazard is dropped, so Dijkstra naturally reroutes to the other exit.
 const hazards = [
-  { id: 'HZ_1', x: 620, y: 220 }, // mid top corridor
-  { id: 'HZ_2', x: 1000, y: 440 }, // mid right corridor
+  { id: 'HZ_1', x: 620, y: 220 },
+  { id: 'HZ_2', x: 1000, y: 440 },
 ];
 
 const HAZARD_BLOCK_RADIUS = 30;
@@ -133,7 +126,6 @@ function distPointToSegment(px: number, py: number, x1: number, y1: number, x2: 
   return Math.hypot(px - cx, py - cy);
 }
 
-// --- Build Navigation Graph ---
 type GraphNode = { id: string; x: number; y: number };
 type GraphEdge = { from: string; to: string; weight: number };
 const nodes: GraphNode[] = [];
@@ -151,7 +143,6 @@ coreTiles.forEach(t => {
   nodes.push({ id: t.id, x: t.centerX, y: t.centerY });
   t.taps.forEach(tap => nodes.push({ id: tap.id, x: tap.x, y: tap.y }));
 });
-// Corners
 nodes.push({ id: 'C_TL', x: 200, y: 220 }, { id: 'C_TR', x: 1000, y: 220 });
 nodes.push({ id: 'C_BL', x: 200, y: 600 }, { id: 'C_BR', x: 1000, y: 600 });
 
@@ -173,7 +164,6 @@ mapRooms.forEach(r => addEdge(r.id, `C_${r.id}`));
 exits.forEach(e => addEdge(e.id, `C_${e.id}`));
 coreTiles.forEach(t => t.taps.forEach(tap => addEdge(t.id, tap.id)));
 
-// Connect Corridors
 ['220', '600'].forEach(yStr => {
   const y = parseInt(yStr);
   const corridor = nodes.filter(n => n.id.startsWith('C_') && Math.abs(n.y - y) < 1).sort((a, b) => a.x - b.x);
@@ -185,7 +175,6 @@ coreTiles.forEach(t => t.taps.forEach(tap => addEdge(t.id, tap.id)));
   for (let i = 0; i < corridor.length - 1; i++) addEdge(corridor[i].id, corridor[i + 1].id);
 });
 
-// Dijkstra Pathfinding
 function findShortestPath(startId: string, exitIds: string[]) {
   const dist: Record<string, number> = {};
   const prev: Record<string, string | null> = {};
@@ -244,7 +233,6 @@ function findShortestPath(startId: string, exitIds: string[]) {
 export default function EvacuationMap({ route, floorRooms, currentFloor }: EvacuationMapProps) {
   const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   
-  // Try to default to the backend route start if possible, otherwise 312
   const defaultStart = route && route[0] ? route[0].roomNumber.match(/\d{2}$/) ? `3${route[0].roomNumber.match(/\d{2}$/)![0]}` : '312' : '312';
   const [startRoom, setStartRoom] = useState<string>(defaultStart);
 
@@ -261,7 +249,7 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
   if (!mounted) return null;
 
   const distMeters = (distance / 12).toFixed(0);
-  const timeSecs = (distance / 12 / 1.5).toFixed(0); // Assuming 1.5m/s walking speed
+  const timeSecs = (distance / 12 / 1.5).toFixed(0);
 
   const selectedCore = coreTiles.find(t => t.id === startRoom);
   const startLabel = selectedCore ? selectedCore.label : `Room ${startRoom}`;
@@ -269,7 +257,6 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
   return (
     <div className="w-full h-full bg-[#f4f1ea] text-slate-800 font-sans relative overflow-hidden flex flex-col items-center justify-center">
 
-      {/* Top-left title card (compact) */}
       <div className="absolute top-3 left-3 flex flex-col items-center bg-white px-3 py-2.5 shadow-lg border border-slate-200 z-10 w-44 rounded-sm pointer-events-none">
         <h1 className="font-serif text-sm font-bold tracking-widest text-[#8b7355] uppercase text-center leading-tight">
           Grand Horizon Hotel
@@ -316,9 +303,7 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
 
           <rect width="100%" height="100%" fill="url(#grid)" />
 
-          {/* Central Core Area — clickable tiles for stairs / elevators / washrooms */}
           <g filter="url(#shadow)">
-            {/* Soft backing block behind the core tiles */}
             <rect x="346" y="316" width="508" height="188" rx="6" fill="#ece6d8" stroke="#c9bfa8" strokeWidth="1.5" />
 
             {(() => {
@@ -360,7 +345,6 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
             })()}
           </g>
 
-          {/* Rooms */}
           <g filter="url(#shadow)">
             {mapRooms.map((r) => {
               const isStart = startRoom === r.id;
@@ -381,7 +365,6 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
             })}
           </g>
 
-          {/* Emergency Exit Stairwells */}
           <g filter="url(#shadow)">
             {exits.map(e => (
               <g key={e.id}>
@@ -392,13 +375,11 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
             ))}
           </g>
 
-          {/* Corridor Hollow Area overlay (to show corridor shape, not actually filled) */}
           <path d="M 160 180 L 1040 180 L 1040 260 L 160 260 Z" fill="rgba(0,0,0,0.02)" className="pointer-events-none" />
           <path d="M 160 560 L 1040 560 L 1040 640 L 160 640 Z" fill="rgba(0,0,0,0.02)" className="pointer-events-none" />
           <path d="M 160 260 L 260 260 L 260 560 L 160 560 Z" fill="rgba(0,0,0,0.02)" className="pointer-events-none" />
           <path d="M 940 260 L 1040 260 L 1040 560 L 940 560 Z" fill="rgba(0,0,0,0.02)" className="pointer-events-none" />
 
-          {/* Evacuation Route path */}
           {pathD && (
             <g className="pointer-events-none">
               <path
@@ -413,7 +394,6 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
             </g>
           )}
 
-          {/* Start Point Marker */}
           {activePathIds.length > 0 && (
             <g transform={`translate(${nodes.find(n => n.id === startRoom)!.x}, ${nodes.find(n => n.id === startRoom)!.y - 20})`} className="pointer-events-none" filter="url(#shadow)">
               <path d="M 0 0 C 15 -15 15 -35 0 -45 C -15 -35 -15 -15 0 0 Z" fill="#ef4444" />
@@ -422,7 +402,6 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
             </g>
           )}
 
-          {/* End Point Marker */}
           {activeExitId && (
             <g transform={`translate(${nodes.find(n => n.id === activeExitId)!.x}, ${nodes.find(n => n.id === activeExitId)!.y})`} className="pointer-events-none">
               <circle cx="0" cy="0" r="20" fill="#10b981" className="animate-pulse" filter="url(#glowRoute)" />
@@ -430,7 +409,6 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
             </g>
           )}
 
-          {/* Fire Hazards — block nearby graph edges */}
           {hazards.map(h => (
             <g key={h.id} transform={`translate(${h.x}, ${h.y})`} className="pointer-events-none">
               <circle r="26" fill="rgba(239,68,68,0.18)" className="animate-ping" />
@@ -451,7 +429,6 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
         }
       `}</style>
       
-      {/* Calculation Results (compact) */}
       <div className="absolute bottom-3 right-3 flex flex-col gap-3 pointer-events-none">
         <div className="bg-white px-3 py-2.5 shadow-lg border border-slate-200 rounded-sm w-48">
           <h3 className="font-bold text-slate-800 text-[10px] uppercase tracking-widest mb-2 border-b pb-1.5">Calculation</h3>
@@ -477,7 +454,6 @@ export default function EvacuationMap({ route, floorRooms, currentFloor }: Evacu
         </div>
       </div>
 
-      {/* Legend (compact) */}
       <div className="absolute bottom-3 left-3 bg-white px-3 py-2.5 shadow-lg border border-slate-200 rounded-sm w-40 pointer-events-none">
         <h3 className="font-bold text-slate-800 text-[10px] uppercase tracking-widest mb-2 border-b pb-1.5 text-center">Legend</h3>
         <div className="space-y-1.5">

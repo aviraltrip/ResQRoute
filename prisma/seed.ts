@@ -2,12 +2,6 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// Layout: 4 floors, 5 guest rooms per floor (numbered x01..x05 along a corridor).
-// Each floor has a corridor with room-to-room hallway edges. Two stairwells
-// (front at x01, rear at x05) span all 4 floors with higher-weight stair edges.
-// Floor 1 has two exit nodes: LOBBY (front) and REAR-EXIT (rear), each
-// connected by an `isExit` edge so Dijkstra can terminate there.
-
 const FLOOR_COUNT = 4;
 const ROOMS_PER_FLOOR = 5;
 const ROOM_X = [0.15, 0.3, 0.5, 0.7, 0.85];
@@ -15,7 +9,6 @@ const ROOM_Y = 0.5;
 const STAIR_WEIGHT = 3;
 
 async function main() {
-  // Clean slate for idempotent reseeds
   await prisma.distressMessage.deleteMany();
   await prisma.incident.deleteMany();
   await prisma.guest.deleteMany();
@@ -31,8 +24,7 @@ async function main() {
     },
   });
 
-  // Create guest rooms
-  const roomByNumber = new Map<string, string>(); // number -> id
+  const roomByNumber = new Map<string, string>();
   for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
     for (let i = 0; i < ROOMS_PER_FLOOR; i++) {
       const number = `${floor}0${i + 1}`;
@@ -49,7 +41,6 @@ async function main() {
     }
   }
 
-  // Create exit nodes on floor 1
   const lobby = await prisma.room.create({
     data: {
       hotelId: hotel.id,
@@ -73,7 +64,6 @@ async function main() {
   roomByNumber.set("LOBBY", lobby.id);
   roomByNumber.set("REAR-EXIT", rearExit.id);
 
-  // Helper: create an undirected edge as two directed rows so queries work from either side
   async function edge(
     aNum: string,
     bNum: string,
@@ -90,24 +80,20 @@ async function main() {
     });
   }
 
-  // Hallway edges on each floor: x01 - x02 - x03 - x04 - x05
   for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
     for (let i = 1; i < ROOMS_PER_FLOOR; i++) {
       await edge(`${floor}0${i}`, `${floor}0${i + 1}`);
     }
   }
 
-  // Stair edges: front stairwell (x01) and rear stairwell (x05) connect floors
   for (let floor = 1; floor < FLOOR_COUNT; floor++) {
     await edge(`${floor}01`, `${floor + 1}01`, { weight: STAIR_WEIGHT });
     await edge(`${floor}05`, `${floor + 1}05`, { weight: STAIR_WEIGHT });
   }
 
-  // Exit edges: floor-1 stairwell bases lead to exit nodes
   await edge("101", "LOBBY", { isExit: true });
   await edge("105", "REAR-EXIT", { isExit: true });
 
-  // Guests (5, one wheelchair). Placeholder phones — swap for Twilio-verified numbers later.
   const guests = [
     { name: "Alice Chen", phone: "+15555550101", roomNumber: "203", accessibilityFlag: false },
     { name: "Bob Kumar", phone: "+15555550102", roomNumber: "305", accessibilityFlag: true },

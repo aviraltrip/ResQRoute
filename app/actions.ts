@@ -50,7 +50,6 @@ export async function checkInGuest(formData: FormData) {
     maxAge: GUEST_COOKIE_MAX_AGE,
   });
 
-  // Redirect client to their dashboard
   redirect(`/g/${guest.token}`);
 }
 
@@ -140,13 +139,11 @@ export async function triggerDistress(guestToken: string, text: string) {
 
   if (!guest) throw new Error("Guest not found");
 
-  // Get active incident (assuming there's an active one, or create drill)
   let incident = await prisma.incident.findFirst({
     orderBy: { startedAt: 'desc' }
   });
 
   if (!incident) {
-    // Fallback if staff hasn't triggered one yet, create generic incident
     incident = await prisma.incident.create({
       data: {
         hotelId: guest.room.hotelId,
@@ -157,7 +154,6 @@ export async function triggerDistress(guestToken: string, text: string) {
     });
   }
 
-  // Insert distress message and update guest status in parallel
   const [message] = await Promise.all([
     prisma.distressMessage.create({
       data: {
@@ -165,7 +161,7 @@ export async function triggerDistress(guestToken: string, text: string) {
         guestId: guest.id,
         roomId: guest.roomId,
         text: cleanText,
-        severity: 5, // Default panic severity
+        severity: 5,
         category: "panic",
       }
     }),
@@ -210,7 +206,6 @@ export async function triggerAlarm(originRoomId: string, type: IncidentType) {
     });
   }
 
-  // Auto-Dispatch SMS + Voice Notification in non-blocking background task
   after(async () => {
     try {
       const latestMessage = await prisma.distressMessage.findFirst({
@@ -455,4 +450,3 @@ export async function submitTextDistress(guestToken: string, text: string) {
   revalidatePath("/staff");
   return { transcript: trimmed, summary: triage.summary, severity: triage.severity, category: triage.category };
 }
-

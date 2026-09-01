@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic, Map, ShieldCheck, AlertTriangle, ArrowRight, ActivitySquare, AlertOctagon, LogOut } from "lucide-react";
+import { Map, AlertTriangle, ArrowRight, AlertOctagon, LogOut } from "lucide-react";
 import GuestActionButtons from "@/components/GuestActionButtons";
 import VoiceDistress from "@/components/VoiceDistress";
 import { signOutGuest } from "@/app/actions";
@@ -40,13 +39,10 @@ export default async function GuestView({ params }: { params: Promise<{ token: s
   return (
     <div className="min-h-screen bg-slate-50 font-sans flex items-center justify-center p-0 sm:p-6">
 
-      {/* Mobile Constraint Wrapper */}
       <div className="w-full h-full sm:h-auto sm:max-w-[400px] bg-white sm:rounded-[40px] sm:border-8 border-zinc-200 shadow-2xl shadow-red-500/10 overflow-hidden relative flex flex-col">
 
-        {/* Background Ambient Glow */}
         <div className="absolute top-[-10%] left-[-10%] w-[120%] h-[40%] bg-gradient-to-b from-red-500/10 to-transparent blur-3xl pointer-events-none" />
 
-        {/* Header */}
         <header className="px-6 pt-10 pb-6 bg-gradient-to-b from-red-50 to-transparent z-10">
           <div className="flex items-center justify-between gap-3 mb-2">
             <div className="flex items-center gap-3">
@@ -71,13 +67,10 @@ export default async function GuestView({ params }: { params: Promise<{ token: s
           </div>
         </header>
 
-        {/* Main Content Scrollable */}
         <main className="flex-1 overflow-y-auto px-5 pb-8 z-10 flex flex-col gap-6">
           
-          {/* Action Buttons */}
           <GuestActionButtons token={token} />
 
-          {/* Dynamic Route Card */}
           <section className="bg-white border border-zinc-200 rounded-3xl overflow-hidden shadow-sm">
             <div className="p-4 border-b border-zinc-200 flex items-center justify-between bg-slate-50">
               <div className="flex items-center gap-2">
@@ -112,7 +105,6 @@ export default async function GuestView({ params }: { params: Promise<{ token: s
                   </div>
                 ) : route.map((step, idx) => (
                   <div key={`${step.roomId}-${step.floor}-${idx}`} className="relative flex items-center mb-6 last:mb-0 group">
-                    {/* Node Circle */}
                     <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 shrink-0 z-10 transition-colors ${
                       idx === 0
                         ? "bg-blue-500 border-blue-100 shadow-[0_0_15px_rgba(59,130,246,0.35)]"
@@ -120,7 +112,6 @@ export default async function GuestView({ params }: { params: Promise<{ token: s
                     }`}>
                       {idx === 0 ? <ArrowRight className="w-4 h-4 text-white" /> : <div className="w-2 h-2 rounded-full bg-zinc-400" />}
                     </div>
-                    {/* Label */}
                     <div className={`ml-4 text-sm font-medium ${
                       idx === 0 ? "text-zinc-900 text-base font-bold" : "text-zinc-500"
                     }`}>
@@ -134,7 +125,6 @@ export default async function GuestView({ params }: { params: Promise<{ token: s
             </div>
           </section>
 
-          {/* Distress Intercom Segment */}
           <VoiceDistress token={token} />
 
         </main>

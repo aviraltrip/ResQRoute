@@ -81,9 +81,7 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
       await navigator.clipboard.writeText(issued.url);
       setState((prev) => ({ ...prev, copied: true }));
       setTimeout(() => setState((prev) => ({ ...prev, copied: false })), 1800);
-    } catch {
-      /* clipboard blocked, ignore */
-    }
+    } catch {}
   }
 
   const qrSrc = issued

@@ -26,12 +26,10 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
   const [selectedRoom, setSelectedRoom] = useState("");
 
   useEffect(() => {
-    // Listen to new guests checking in
     const guestSub = supabase
       .channel('public:Guest')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Guest' }, (payload) => {
         const newGuest = payload.new as GuestWithRoom;
-        // Lookup room number from the passed rooms array
         const r = rooms.find(room => room.id === newGuest.roomId);
         if (r) newGuest.room = r;
         setGuests((prev) => [...prev, newGuest]);
@@ -49,7 +47,6 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
       })
       .subscribe();
 
-    // Listen to new distress messages
     const distressSub = supabase
       .channel('public:DistressMessage')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'DistressMessage' }, (payload) => {
@@ -75,12 +72,9 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
 
   return (
     <div className="min-h-screen bg-slate-50 text-zinc-900 flex flex-col font-sans overflow-hidden">
-      
-      {/* Background Ambience */}
       <div className="absolute top-0 right-0 w-[800px] h-[400px] bg-red-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-500/5 blur-[150px] pointer-events-none" />
 
-      {/* Top Navbar */}
       <header className="bg-white/80 backdrop-blur-xl border-b border-zinc-200 px-6 py-4 flex justify-between items-center z-10 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -125,13 +119,10 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
         </div>
       </header>
 
-      {/* Main Grid */}
       <main className="flex-1 p-6 grid grid-cols-12 gap-6 z-10 h-[calc(100vh-80px)]">
         
-        {/* Left Column: Stats & Guest Grid */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-6 h-full">
           
-          {/* Stats Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard icon={<CheckCircle2 className="w-6 h-6 text-emerald-600" />} value={stats.safe} label="Verified Safe" color="emerald" />
             <StatCard icon={<AlertCircle className="w-6 h-6 text-red-600" />} value={stats.trapped} label="Trapped / Need Help" color="red" />
@@ -139,7 +130,6 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
             <StatCard icon={<User className="w-6 h-6 text-slate-500" />} value={stats.checked_in} label="Unresponsive" color="slate" />
           </div>
 
-          {/* Guest Roster / Map Section */}
           <div className="bg-white border border-zinc-200 rounded-2xl flex-1 flex flex-col overflow-hidden shadow-sm">
             <div className="px-6 py-4 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50">
               <h2 className="text-base font-semibold text-zinc-900">Live Realtime Roster ({guests.length})</h2>
@@ -207,7 +197,6 @@ export default function StaffDashboardClient({ initialGuests, initialMessages, r
           </div>
         </div>
 
-        {/* Right Column: Triage Feed */}
         <div className="col-span-12 lg:col-span-4 h-full flex flex-col">
           <div className="bg-white border border-zinc-200 rounded-2xl flex-1 flex flex-col overflow-hidden shadow-sm">
             <div className="px-5 py-4 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-between shadow-sm">
