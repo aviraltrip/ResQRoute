@@ -240,7 +240,7 @@ export async function triggerAlarm(originRoomId: string, type: IncidentType) {
   const cleanRoomId = originRoomId?.trim();
   if (!cleanRoomId || !type) throw new Error("Room ID and incident type are required");
 
-  let incident = FALLBACK_INCIDENT;
+  let incident: { id: string; hotelId: string; type: IncidentType; originRoomId: string; startedAt: Date; endedAt: Date | null; isDrill: boolean } = FALLBACK_INCIDENT;
 
   try {
     const [room, existingIncident] = await Promise.all([
