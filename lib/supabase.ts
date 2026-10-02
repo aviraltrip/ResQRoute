@@ -24,7 +24,6 @@ function createSafeSupabaseClient(): SupabaseClient {
     }
   }
 
-  // Safe fallback mock client that prevents SSR and runtime crashes
   return {
     channel: () => ({
       on: function () {

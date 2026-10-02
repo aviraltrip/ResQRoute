@@ -34,10 +34,6 @@ export const prisma =
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
-/**
- * Execute a Prisma query safely with a timeout and fallback.
- * If the database is unreachable, times out, or throws, returns the fallback value.
- */
 export async function safeDbQuery<T>(
   queryFn: () => Promise<T>,
   fallbackValue: T,

@@ -53,7 +53,6 @@ export default async function StaffDashboard() {
     ),
   ]);
 
-  // Check if fallback was used
   if (
     rooms === FALLBACK_ROOMS ||
     guests === FALLBACK_GUESTS ||

@@ -194,7 +194,6 @@ export default function StaffDashboardClient({
             type="button"
             variant="outline"
             onClick={() => {
-              // Reset emergency state locally
               setGuests((prev) => prev.map((g) => ({ ...g, status: "checked_in" })));
               setMessages([]);
             }}
