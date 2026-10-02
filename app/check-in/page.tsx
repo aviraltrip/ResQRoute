@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { prisma, safeDbQuery } from "@/lib/prisma";
+import { FALLBACK_GUESTS } from "@/lib/fallback-data";
 import { QrCode, ShieldAlert } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,10 @@ export default async function CheckInPage() {
   const cookieStore = await cookies();
   const existingToken = cookieStore.get("resq_guest_token")?.value;
   if (existingToken) {
-    const existing = await prisma.guest.findUnique({ where: { token: existingToken } });
+    const existing = await safeDbQuery(
+      () => prisma.guest.findUnique({ where: { token: existingToken } }),
+      FALLBACK_GUESTS.find((g) => g.token === existingToken) || null
+    );
     if (existing) redirect(`/g/${existing.token}`);
   }
 
