@@ -4,10 +4,18 @@ import { Map, AlertTriangle, ArrowRight, AlertOctagon, LogOut } from "lucide-rea
 import GuestActionButtons from "@/components/GuestActionButtons";
 import VoiceDistress from "@/components/VoiceDistress";
 import { signOutGuest } from "@/app/actions";
-import { prisma } from "@/lib/prisma";
+import { prisma, safeDbQuery } from "@/lib/prisma";
+import {
+  FALLBACK_GUESTS,
+  FALLBACK_INCIDENT,
+  FALLBACK_ROOMS,
+} from "@/lib/fallback-data";
 import { computeEvacuationRoute } from "@/lib/routing";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import EvacuationMap from "@/components/EvacuationMap";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "Live Evacuation Dashboard — ResQRoute",
@@ -17,30 +25,43 @@ export const metadata: Metadata = {
 export default async function GuestView({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const [guest, incident] = await Promise.all([
-    prisma.guest.findUnique({
-      where: { token },
-      include: { room: true }
-    }),
-    prisma.incident.findFirst({
-      orderBy: { startedAt: 'desc' }
-    })
+    safeDbQuery(
+      () =>
+        prisma.guest.findUnique({
+          where: { token },
+          include: { room: true },
+        }),
+      FALLBACK_GUESTS.find((g) => g.token === token) || {
+        ...FALLBACK_GUESTS[0],
+        token,
+      }
+    ),
+    safeDbQuery(
+      () =>
+        prisma.incident.findFirst({
+          orderBy: { startedAt: "desc" },
+        }),
+      FALLBACK_INCIDENT
+    ),
   ]);
 
   if (!guest) return <div>Invalid Session</div>;
 
   const hazardRooms = incident ? [incident.originRoomId] : [];
   const [route, floorRooms] = await Promise.all([
-    computeEvacuationRoute(guest.roomId, hazardRooms),
-    prisma.room.findMany({
-      where: { floor: guest.room.floor }
-    })
+    computeEvacuationRoute(guest.roomId, hazardRooms).catch(() => []),
+    safeDbQuery(
+      () =>
+        prisma.room.findMany({
+          where: { floor: guest.room.floor },
+        }),
+      FALLBACK_ROOMS.filter((r) => r.floor === guest.room.floor)
+    ),
   ]);
   
   return (
     <div className="min-h-screen bg-slate-50 font-sans flex items-center justify-center p-0 sm:p-6">
-
       <div className="w-full h-full sm:h-auto sm:max-w-[400px] bg-white sm:rounded-[40px] sm:border-8 border-zinc-200 shadow-2xl shadow-red-500/10 overflow-hidden relative flex flex-col">
-
         <div className="absolute top-[-10%] left-[-10%] w-[120%] h-[40%] bg-gradient-to-b from-red-500/10 to-transparent blur-3xl pointer-events-none" />
 
         <header className="px-6 pt-10 pb-6 bg-gradient-to-b from-red-50 to-transparent z-10">
@@ -68,7 +89,6 @@ export default async function GuestView({ params }: { params: Promise<{ token: s
         </header>
 
         <main className="flex-1 overflow-y-auto px-5 pb-8 z-10 flex flex-col gap-6">
-          
           <GuestActionButtons token={token} />
 
           <section className="bg-white border border-zinc-200 rounded-3xl overflow-hidden shadow-sm">
@@ -126,7 +146,6 @@ export default async function GuestView({ params }: { params: Promise<{ token: s
           </section>
 
           <VoiceDistress token={token} />
-
         </main>
       </div>
     </div>
