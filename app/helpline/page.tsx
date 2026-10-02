@@ -2,7 +2,12 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Phone, ShieldAlert, ArrowLeft, MapPin, Flame, Cross, Shield } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { prisma, safeDbQuery } from "@/lib/prisma";
+import {
+  FALLBACK_HOTEL,
+  FALLBACK_INCIDENT,
+  FALLBACK_MESSAGES,
+} from "@/lib/fallback-data";
 import {
   findHelplines,
   helplineLabel,
@@ -47,19 +52,29 @@ export default async function HelplinePage(props: { searchParams: Promise<{ room
   const roomId = searchParams?.roomId;
 
   const [hotel, incident] = await Promise.all([
-    prisma.hotel.findFirst(),
-    prisma.incident.findFirst({ orderBy: { startedAt: "desc" } }),
+    safeDbQuery(
+      () => prisma.hotel.findFirst(),
+      FALLBACK_HOTEL
+    ),
+    safeDbQuery(
+      () => prisma.incident.findFirst({ orderBy: { startedAt: "desc" } }),
+      FALLBACK_INCIDENT
+    ),
   ]);
 
   const latestMessage = incident
-    ? await prisma.distressMessage.findFirst({
-        where: {
-          incidentId: incident.id,
-          category: { not: null },
-          ...(roomId ? { roomId } : {})
-        },
-        orderBy: [{ severity: "desc" }, { createdAt: "desc" }],
-      })
+    ? await safeDbQuery(
+        () =>
+          prisma.distressMessage.findFirst({
+            where: {
+              incidentId: incident.id,
+              category: { not: null },
+              ...(roomId ? { roomId } : {}),
+            },
+            orderBy: [{ severity: "desc" }, { createdAt: "desc" }],
+          }),
+        FALLBACK_MESSAGES[0]
+      )
     : null;
 
   let primaryKind: HelplineKind;
@@ -76,7 +91,7 @@ export default async function HelplinePage(props: { searchParams: Promise<{ room
   }
 
   const helplines = hotel
-    ? await findHelplines(hotel.latitude, hotel.longitude, [primaryKind])
+    ? await findHelplines(hotel.latitude, hotel.longitude, [primaryKind]).catch(() => [])
     : [];
 
   return (
