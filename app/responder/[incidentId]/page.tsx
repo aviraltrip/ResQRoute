@@ -8,6 +8,7 @@ import {
   FALLBACK_GUESTS,
   FALLBACK_ROOMS,
   FALLBACK_MESSAGES,
+  type FallbackDistressMessageWithRoom,
 } from "@/lib/fallback-data";
 
 export const dynamic = "force-dynamic";
@@ -23,18 +24,20 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
   
   const originFallbackRoom = FALLBACK_ROOMS.find((r) => r.id === FALLBACK_INCIDENT.originRoomId) || FALLBACK_ROOMS[0];
 
-  const incident = await safeDbQuery(
+  const dbIncident = await safeDbQuery(
     () =>
       prisma.incident.findUnique({
         where: { id: incidentId },
         include: { originRoom: true },
       }),
-    {
-      ...FALLBACK_INCIDENT,
-      id: incidentId,
-      originRoom: originFallbackRoom,
-    }
+    null
   );
+
+  const incident = dbIncident || {
+    ...FALLBACK_INCIDENT,
+    id: incidentId,
+    originRoom: originFallbackRoom,
+  };
 
   const originRoom = incident.originRoom?.number || originFallbackRoom.number;
   const originFloor = incident.originRoom?.floor || originFallbackRoom.floor;
@@ -47,7 +50,7 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
         }),
       FALLBACK_GUESTS
     ),
-    safeDbQuery(
+    safeDbQuery<FallbackDistressMessageWithRoom[]>(
       () =>
         prisma.distressMessage.findMany({
           where: { incidentId },
@@ -65,7 +68,7 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
     ),
   ]);
 
-  const priorityEvacs = allGuests.reduce<{
+  const priorityEvacs = (allGuests || []).reduce<{
     id: string;
     name: string;
     room: string;
@@ -93,7 +96,7 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
   }, []);
 
   const floorPriorityEvacs = priorityEvacs.filter((g) => g.floor === originFloor);
-  const totalSafe = allGuests.filter((g) => g.status === "safe").length;
+  const totalSafe = (allGuests || []).filter((g) => g.status === "safe").length;
   const dangerZoneCount = priorityEvacs.length;
 
   return (
@@ -160,15 +163,21 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
               <h2 className="text-sm uppercase tracking-widest text-blue-700 font-bold">Live Distress Comms</h2>
             </div>
             <div className="p-4 overflow-y-auto space-y-4">
-              {distress.length === 0 ? (
+              {(distress || []).length === 0 ? (
                 <div className="text-center text-zinc-400 text-xs py-10">No active comms</div>
-              ) : distress.map((d) => (
-                <div key={d.id} className="bg-slate-50 border border-zinc-200 border-l-2 border-l-red-500 p-3 rounded-r-lg text-sm relative">
-                  <div className="text-[10px] text-zinc-500 mb-1.5 font-mono tracking-wider">RM {d.room?.number || "Unknown"}</div>
-                  <p className="text-zinc-700">&ldquo;{d.text}&rdquo;</p>
-                  <div className="absolute top-3 right-3 text-[10px] text-red-600 font-bold uppercase tracking-widest">{d.category || "Panic"}</div>
-                </div>
-              ))}
+              ) : (
+                distress.map((d) => (
+                  <div key={d.id} className="bg-slate-50 border border-zinc-200 border-l-2 border-l-red-500 p-3 rounded-r-lg text-sm relative">
+                    <div className="text-[10px] text-zinc-500 mb-1.5 font-mono tracking-wider">
+                      RM {d.room?.number || "Unknown"}
+                    </div>
+                    <p className="text-zinc-700">&ldquo;{d.text}&rdquo;</p>
+                    <div className="absolute top-3 right-3 text-[10px] text-red-600 font-bold uppercase tracking-widest">
+                      {d.category || "Panic"}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -213,7 +222,7 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
 
               <div className="relative w-full max-w-3xl aspect-[2/1] border-2 border-blue-200 bg-blue-50/50 rounded-lg overflow-hidden z-10 shadow-[0_0_50px_rgba(59,130,246,0.08)] flex items-center justify-center">
                 <svg width="80%" height="80%" viewBox="0 0 400 200" fill="none" stroke="#93c5fd" strokeWidth="2">
-                  <g style={{ transform: `translate(${(incident.originRoom?.x || 0.5) * 400}px, ${(incident.originRoom?.y || 0.5) * 200}px)` }}>
+                  <g style={{ transform: `translate(${(incident.originRoom?.x || originFallbackRoom.x) * 400}px, ${(incident.originRoom?.y || originFallbackRoom.y) * 200}px)` }}>
                     <circle cx="0" cy="0" r="12" fill="rgba(239,68,68,0.2)" className="animate-ping" />
                     <circle cx="0" cy="0" r="6" fill="#dc2626" />
                     <text x="12" y="4" fontSize="12" fill="#dc2626" stroke="none" className="font-sans font-bold drop-shadow-md">{originRoom}</text>

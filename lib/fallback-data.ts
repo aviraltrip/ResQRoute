@@ -101,7 +101,9 @@ export const FALLBACK_GUESTS: FallbackGuestWithRoom[] = [
   },
 ];
 
-export const FALLBACK_INCIDENT: Incident = {
+export type FallbackIncidentWithRoom = Incident & { originRoom: Room };
+
+export const FALLBACK_INCIDENT: FallbackIncidentWithRoom = {
   id: "incident-active-1",
   hotelId: "hotel-demo-1",
   type: "fire",
@@ -109,9 +111,14 @@ export const FALLBACK_INCIDENT: Incident = {
   startedAt: new Date(),
   endedAt: null,
   isDrill: false,
+  originRoom: FALLBACK_ROOMS.find((r) => r.id === "room-204")!,
 };
 
-export const FALLBACK_MESSAGES: DistressMessage[] = [
+export type FallbackDistressMessageWithRoom = DistressMessage & {
+  room?: Room;
+};
+
+export const FALLBACK_MESSAGES: FallbackDistressMessageWithRoom[] = [
   {
     id: "msg-1",
     incidentId: "incident-active-1",
@@ -122,5 +129,6 @@ export const FALLBACK_MESSAGES: DistressMessage[] = [
     category: "mobility",
     summary: "Heavy smoke near stairwell, wheelchair user unable to take stairs",
     createdAt: new Date(),
+    room: FALLBACK_ROOMS.find((r) => r.id === "room-305"),
   },
 ];
