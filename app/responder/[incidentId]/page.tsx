@@ -2,7 +2,16 @@ import React from "react";
 import type { Metadata } from "next";
 import { Badge } from "@/components/ui/badge";
 import { Flame, Navigation, AlertOctagon, HeartPulse, PersonStanding, MoveRight, Eye } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { prisma, safeDbQuery } from "@/lib/prisma";
+import {
+  FALLBACK_INCIDENT,
+  FALLBACK_GUESTS,
+  FALLBACK_ROOMS,
+  FALLBACK_MESSAGES,
+} from "@/lib/fallback-data";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "Tactical Responder View — ResQRoute",
@@ -12,27 +21,48 @@ export const metadata: Metadata = {
 export default async function ResponderView({ params }: { params: Promise<{ incidentId: string }> }) {
   const { incidentId } = await params;
   
-  const incident = await prisma.incident.findUnique({
-    where: { id: incidentId },
-    include: { originRoom: true }
-  });
+  const originFallbackRoom = FALLBACK_ROOMS.find((r) => r.id === FALLBACK_INCIDENT.originRoomId) || FALLBACK_ROOMS[0];
 
-  if (!incident) return <div>Incident Not Found</div>;
+  const incident = await safeDbQuery(
+    () =>
+      prisma.incident.findUnique({
+        where: { id: incidentId },
+        include: { originRoom: true },
+      }),
+    {
+      ...FALLBACK_INCIDENT,
+      id: incidentId,
+      originRoom: originFallbackRoom,
+    }
+  );
 
-  const originRoom = incident.originRoom.number;
+  const originRoom = incident.originRoom?.number || originFallbackRoom.number;
+  const originFloor = incident.originRoom?.floor || originFallbackRoom.floor;
   
   const [allGuests, distress, floorRooms] = await Promise.all([
-    prisma.guest.findMany({
-      include: { room: true }
-    }),
-    prisma.distressMessage.findMany({
-      where: { incidentId },
-      include: { room: true },
-      orderBy: { createdAt: 'desc' }
-    }),
-    prisma.room.findMany({
-      where: { floor: incident.originRoom.floor }
-    })
+    safeDbQuery(
+      () =>
+        prisma.guest.findMany({
+          include: { room: true },
+        }),
+      FALLBACK_GUESTS
+    ),
+    safeDbQuery(
+      () =>
+        prisma.distressMessage.findMany({
+          where: { incidentId },
+          include: { room: true },
+          orderBy: { createdAt: "desc" },
+        }),
+      FALLBACK_MESSAGES
+    ),
+    safeDbQuery(
+      () =>
+        prisma.room.findMany({
+          where: { floor: originFloor },
+        }),
+      FALLBACK_ROOMS.filter((r) => r.floor === originFloor)
+    ),
   ]);
 
   const priorityEvacs = allGuests.reduce<{
@@ -46,34 +76,32 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
     reason: string;
     flag: string;
   }[]>((acc, g) => {
-    if (g.status !== "safe" && (g.accessibilityFlag || g.room.floor === incident.originRoom.floor)) {
+    if (g.status !== "safe" && (g.accessibilityFlag || g.room?.floor === originFloor)) {
       acc.push({
         id: g.id,
         name: g.name,
-        room: g.room.number,
-        floor: g.room.floor,
-        x: g.room.x,
-        y: g.room.y,
+        room: g.room?.number || "Unknown",
+        floor: g.room?.floor || 1,
+        x: g.room?.x || 0.5,
+        y: g.room?.y || 0.5,
         status: g.status,
         reason: g.accessibilityFlag ? "Accessibility Flag" : "Danger Proximity",
-        flag: g.accessibilityFlag ? "mobility" : "fire-exposure"
+        flag: g.accessibilityFlag ? "mobility" : "fire-exposure",
       });
     }
     return acc;
   }, []);
 
-  const floorPriorityEvacs = priorityEvacs.filter(g => g.floor === incident.originRoom.floor);
-  const totalSafe = allGuests.filter(g => g.status === 'safe').length;
+  const floorPriorityEvacs = priorityEvacs.filter((g) => g.floor === originFloor);
+  const totalSafe = allGuests.filter((g) => g.status === "safe").length;
   const dangerZoneCount = priorityEvacs.length;
 
   return (
     <div className="min-h-screen bg-slate-50 text-zinc-900 flex flex-col font-mono selection:bg-blue-100 relative overflow-hidden">
-
       <div className="absolute top-0 right-0 w-[800px] h-[400px] bg-red-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-500/5 blur-[150px] pointer-events-none" />
 
       <header className="bg-white/80 backdrop-blur-xl border-b border-zinc-200 p-4 flex justify-between items-center z-10 sticky top-0 shadow-sm">
-
         <div className="flex items-center gap-5 z-10 w-full">
           <div className="bg-red-600 px-4 py-2 rounded font-bold tracking-widest text-sm text-white flex items-center gap-3 shadow-md shadow-red-500/30 border border-red-500">
             <Flame className="w-5 h-5 animate-pulse" />
@@ -101,16 +129,14 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
       </header>
 
       <main className="flex-1 p-5 grid grid-cols-12 gap-5 h-[calc(100vh-5rem)] z-10">
-
         <div className="col-span-4 flex flex-col gap-5 overflow-hidden h-full">
-
           <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm flex flex-col shrink-0">
             <div className="p-3 bg-red-50 border-b border-red-200 flex items-center gap-3">
               <AlertOctagon className="w-5 h-5 text-red-600 animate-pulse" />
               <h2 className="text-sm uppercase tracking-widest text-red-600 font-bold">Priority Extractions</h2>
             </div>
             <ul className="divide-y divide-zinc-100">
-              {priorityEvacs.map(target => (
+              {priorityEvacs.map((target) => (
                 <li key={target.id} className="p-4 bg-white hover:bg-red-50/60 transition-colors">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
@@ -120,7 +146,7 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
                     <span className="text-[10px] font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">FLR {target.floor}</span>
                   </div>
                   <p className="text-xs text-zinc-500 flex items-center gap-2">
-                    {target.flag === 'mobility' ? <PersonStanding className="w-4 h-4 text-orange-600" /> : <Flame className="w-4 h-4 text-orange-600" />}
+                    {target.flag === "mobility" ? <PersonStanding className="w-4 h-4 text-orange-600" /> : <Flame className="w-4 h-4 text-orange-600" />}
                     {target.reason}
                   </p>
                 </li>
@@ -136,11 +162,11 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
             <div className="p-4 overflow-y-auto space-y-4">
               {distress.length === 0 ? (
                 <div className="text-center text-zinc-400 text-xs py-10">No active comms</div>
-              ) : distress.map(d => (
+              ) : distress.map((d) => (
                 <div key={d.id} className="bg-slate-50 border border-zinc-200 border-l-2 border-l-red-500 p-3 rounded-r-lg text-sm relative">
-                  <div className="text-[10px] text-zinc-500 mb-1.5 font-mono tracking-wider">RM {d.room.number}</div>
+                  <div className="text-[10px] text-zinc-500 mb-1.5 font-mono tracking-wider">RM {d.room?.number || "Unknown"}</div>
                   <p className="text-zinc-700">&ldquo;{d.text}&rdquo;</p>
-                  <div className="absolute top-3 right-3 text-[10px] text-red-600 font-bold uppercase tracking-widest">{d.category}</div>
+                  <div className="absolute top-3 right-3 text-[10px] text-red-600 font-bold uppercase tracking-widest">{d.category || "Panic"}</div>
                 </div>
               ))}
             </div>
@@ -149,61 +175,63 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
 
         <div className="col-span-8 flex flex-col">
           <div className="bg-white border border-zinc-200 rounded-xl flex-1 h-full overflow-hidden flex flex-col relative shadow-sm">
-
             <div className="p-3 border-b border-zinc-200 flex items-center justify-between shrink-0 bg-white/90 backdrop-blur-md absolute w-full top-0 z-20">
               <h2 className="text-sm uppercase tracking-widest text-blue-700 font-bold flex items-center gap-2">
                 <Navigation className="w-4 h-4" />
-                Floor 4 Map Grid
+                Floor {originFloor} Map Grid
               </h2>
               <div className="flex gap-2">
-                 {['Floor 1', 'Floor 2', 'Floor 3'].map(f => (
-                   <button key={f} type="button" className="px-3 py-1 text-xs font-bold text-zinc-600 bg-slate-50 hover:bg-slate-100 border border-zinc-200 rounded transition-colors uppercase tracking-wider">{f}</button>
+                 {["Floor 1", "Floor 2", "Floor 3", "Floor 4"].map((f) => (
+                   <button
+                     key={f}
+                     type="button"
+                     className={`px-3 py-1 text-xs font-bold rounded transition-colors uppercase tracking-wider ${
+                       f === `Floor ${originFloor}`
+                         ? "text-white bg-blue-600 hover:bg-blue-700 border border-blue-500 shadow-sm shadow-blue-500/30"
+                         : "text-zinc-600 bg-slate-50 hover:bg-slate-100 border border-zinc-200"
+                     }`}
+                   >
+                     {f}
+                   </button>
                  ))}
-                 <button type="button" className="px-3 py-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 border border-blue-500 rounded uppercase tracking-wider shadow-sm shadow-blue-500/30">Floor 4</button>
               </div>
             </div>
 
             <div className="flex-1 flex items-center justify-center bg-slate-50 mt-12 pb-4 relative">
-
-              <div className="absolute inset-0"
-                   style={{
-                     backgroundImage: `
-                       linear-gradient(rgba(37, 99, 235, 0.08) 1px, transparent 1px),
-                       linear-gradient(90deg, rgba(37, 99, 235, 0.08) 1px, transparent 1px),
-                       linear-gradient(rgba(37, 99, 235, 0.04) 1px, transparent 1px),
-                       linear-gradient(90deg, rgba(37, 99, 235, 0.04) 1px, transparent 1px)
-                     `,
-                     backgroundSize: '100px 100px, 100px 100px, 20px 20px, 20px 20px'
-                   }}
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(rgba(37, 99, 235, 0.08) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(37, 99, 235, 0.08) 1px, transparent 1px),
+                    linear-gradient(rgba(37, 99, 235, 0.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(37, 99, 235, 0.04) 1px, transparent 1px)
+                  `,
+                  backgroundSize: "100px 100px, 100px 100px, 20px 20px, 20px 20px"
+                }}
               />
 
               <div className="relative w-full max-w-3xl aspect-[2/1] border-2 border-blue-200 bg-blue-50/50 rounded-lg overflow-hidden z-10 shadow-[0_0_50px_rgba(59,130,246,0.08)] flex items-center justify-center">
+                <svg width="80%" height="80%" viewBox="0 0 400 200" fill="none" stroke="#93c5fd" strokeWidth="2">
+                  <g style={{ transform: `translate(${(incident.originRoom?.x || 0.5) * 400}px, ${(incident.originRoom?.y || 0.5) * 200}px)` }}>
+                    <circle cx="0" cy="0" r="12" fill="rgba(239,68,68,0.2)" className="animate-ping" />
+                    <circle cx="0" cy="0" r="6" fill="#dc2626" />
+                    <text x="12" y="4" fontSize="12" fill="#dc2626" stroke="none" className="font-sans font-bold drop-shadow-md">{originRoom}</text>
+                  </g>
 
-                 <svg width="80%" height="80%" viewBox="0 0 400 200" fill="none" stroke="#93c5fd" strokeWidth="2">
-                   {floorRooms.map(r => (
-                     <g key={r.id} className={`translate-x-[${r.x * 400}px] translate-y-[${r.y * 200}px]`}>
-                     </g>
-                   ))}
+                  {floorPriorityEvacs.map((v) => (
+                    <g key={v.id} style={{ transform: `translate(${v.x * 400}px, ${v.y * 200}px)` }}>
+                      <circle cx="-10" cy="-10" r="4" fill={v.status === "trapped" ? "#ea580c" : "#ca8a04"} />
+                      <circle cx="-10" cy="-10" r="7" stroke={v.status === "trapped" ? "#ea580c" : "#ca8a04"} strokeDasharray="2 2" className="animate-spin-slow" />
+                      <text x="0" y="-8" fontSize="9" fill={v.status === "trapped" ? "#ea580c" : "#ca8a04"} stroke="none" className="font-sans font-bold">{v.room}</text>
+                    </g>
+                  ))}
+                </svg>
 
-                   <g style={{ transform: `translate(${incident.originRoom.x * 400}px, ${incident.originRoom.y * 200}px)` }}>
-                     <circle cx="0" cy="0" r="12" fill="rgba(239,68,68,0.2)" className="animate-ping" />
-                     <circle cx="0" cy="0" r="6" fill="#dc2626" />
-                     <text x="12" y="4" fontSize="12" fill="#dc2626" stroke="none" className="font-sans font-bold drop-shadow-md">{incident.originRoom.number}</text>
-                   </g>
-
-                   {floorPriorityEvacs.map(v => (
-                     <g key={v.id} style={{ transform: `translate(${v.x * 400}px, ${v.y * 200}px)` }}>
-                       <circle cx="-10" cy="-10" r="4" fill={v.status === 'trapped' ? "#ea580c" : "#ca8a04"} />
-                       <circle cx="-10" cy="-10" r="7" stroke={v.status === 'trapped' ? "#ea580c" : "#ca8a04"} strokeDasharray="2 2" className="animate-spin-slow" />
-                       <text x="0" y="-8" fontSize="9" fill={v.status === 'trapped' ? "#ea580c" : "#ca8a04"} stroke="none" className="font-sans font-bold">{v.room}</text>
-                     </g>
-                   ))}
-                 </svg>
-
-                 <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-blue-500" />
-                 <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-blue-500" />
-                 <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-blue-500" />
-                 <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-blue-500" />
+                <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-blue-500" />
+                <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-blue-500" />
+                <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-blue-500" />
+                <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-blue-500" />
               </div>
             </div>
 
@@ -211,10 +239,8 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
               <Eye className="w-3 h-3 inline pb-0.5 mr-1" />
               LIVE TELEMETRY
             </div>
-
           </div>
         </div>
-
       </main>
     </div>
   );
