@@ -115,22 +115,31 @@ async function main() {
     { name: "Emma Sato", phone: "+15555550105", roomNumber: "404", accessibilityFlag: false },
   ];
 
-  for (const g of guests) {
-    await prisma.guest.create({
-      data: {
-        name: g.name,
-        phone: g.phone,
-        roomId: roomByNumber.get(g.roomNumber)!,
-        accessibilityFlag: g.accessibilityFlag,
-      },
-    });
-  }
+  await Promise.all(
+    guests.map((g) =>
+      prisma.guest.create({
+        data: {
+          name: g.name,
+          phone: g.phone,
+          roomId: roomByNumber.get(g.roomNumber)!,
+          accessibilityFlag: g.accessibilityFlag,
+        },
+      })
+    )
+  );
+
+  const [hotels, rooms, edges, guestCount] = await Promise.all([
+    prisma.hotel.count(),
+    prisma.room.count(),
+    prisma.edge.count(),
+    prisma.guest.count(),
+  ]);
 
   const counts = {
-    hotels: await prisma.hotel.count(),
-    rooms: await prisma.room.count(),
-    edges: await prisma.edge.count(),
-    guests: await prisma.guest.count(),
+    hotels,
+    rooms,
+    edges,
+    guests: guestCount,
   };
   console.log("Seed complete:", counts);
   console.log("Guest tokens (for /g/[token] demo URLs):");
