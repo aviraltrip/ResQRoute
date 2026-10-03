@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -76,6 +76,8 @@ export default function StaffDashboardClient({
   const [loadingAction, setLoadingAction] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState("");
   const safeRooms = useMemo(() => rooms || [], [rooms]);
+  const roomsRef = useRef(safeRooms);
+  roomsRef.current = safeRooms;
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -88,7 +90,7 @@ export default function StaffDashboardClient({
           { event: "INSERT", schema: "public", table: "Guest" },
           (payload) => {
             const newGuest = payload.new as GuestWithRoom;
-            const r = safeRooms.find((room) => room.id === newGuest.roomId);
+            const r = roomsRef.current.find((room) => room.id === newGuest.roomId);
             if (r) newGuest.room = r;
             setGuests((prev) => [...prev, newGuest]);
           }
@@ -137,7 +139,7 @@ export default function StaffDashboardClient({
     } catch (err) {
       console.warn("Realtime subscription failed:", err);
     }
-  }, [safeRooms]);
+  }, []);
 
   const safeGuestList = Array.isArray(guests) ? guests : [];
   const safeMessageList = Array.isArray(messages) ? messages : [];
