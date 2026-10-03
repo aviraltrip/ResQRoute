@@ -182,7 +182,9 @@ export async function confirmGuestCheckIn(setupToken: string, formData: FormData
 export async function triggerDistress(guestToken: string, text: string) {
   const cleanToken = guestToken?.trim();
   const cleanText = text?.trim();
-  if (!cleanToken || !cleanText) throw new Error("Token and message are required");
+  if (!cleanToken || cleanToken.length < 4 || !cleanText) {
+    throw new Error("Invalid or unauthenticated distress signal request");
+  }
 
   try {
     const guest = await prisma.guest.findUnique({
@@ -370,7 +372,9 @@ export async function triggerAlarm(originRoomId: string, type: IncidentType) {
 
 export async function markGuestSafe(guestToken: string) {
   const cleanToken = guestToken?.trim();
-  if (!cleanToken) throw new Error("Guest token is required");
+  if (!cleanToken || cleanToken.length < 4) {
+    throw new Error("Invalid or unauthenticated guest safety confirmation");
+  }
 
   try {
     const guest = await prisma.guest.update({
