@@ -54,7 +54,7 @@ export const AnimatedCard = ({
           
           <div className="relative z-10">
             <m.div variants={ITEM_VARIANTS} className="flex justify-between items-start mb-6">
-              <div className="w-14 h-14 bg-zinc-50 rounded-[16px] flex items-center justify-center text-zinc-700 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-sm border border-zinc-100 group-hover:border-blue-500 group-hover:shadow-blue-200">
+              <div className="w-14 h-14 bg-zinc-50 rounded-[16px] flex items-center justify-center text-zinc-900 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-sm border border-zinc-100 group-hover:border-blue-500 group-hover:shadow-blue-200">
                 {icon}
               </div>
               {badgeText && (
