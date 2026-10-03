@@ -25,44 +25,52 @@ async function main() {
   });
 
   const roomByNumber = new Map<string, string>();
+  const roomPromises = [];
+
   for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
     for (let i = 0; i < ROOMS_PER_FLOOR; i++) {
       const number = `${floor}0${i + 1}`;
-      const room = await prisma.room.create({
-        data: {
-          hotelId: hotel.id,
-          number,
-          floor,
-          x: ROOM_X[i],
-          y: ROOM_Y,
-        },
-      });
-      roomByNumber.set(number, room.id);
+      roomPromises.push(
+        prisma.room.create({
+          data: {
+            hotelId: hotel.id,
+            number,
+            floor,
+            x: ROOM_X[i],
+            y: ROOM_Y,
+          },
+        })
+      );
     }
   }
 
-  const lobby = await prisma.room.create({
-    data: {
-      hotelId: hotel.id,
-      number: "LOBBY",
-      floor: 1,
-      x: 0.15,
-      y: 0.95,
-      isExit: true,
-    },
-  });
-  const rearExit = await prisma.room.create({
-    data: {
-      hotelId: hotel.id,
-      number: "REAR-EXIT",
-      floor: 1,
-      x: 0.85,
-      y: 0.05,
-      isExit: true,
-    },
-  });
-  roomByNumber.set("LOBBY", lobby.id);
-  roomByNumber.set("REAR-EXIT", rearExit.id);
+  roomPromises.push(
+    prisma.room.create({
+      data: {
+        hotelId: hotel.id,
+        number: "LOBBY",
+        floor: 1,
+        x: 0.15,
+        y: 0.95,
+        isExit: true,
+      },
+    }),
+    prisma.room.create({
+      data: {
+        hotelId: hotel.id,
+        number: "REAR-EXIT",
+        floor: 1,
+        x: 0.85,
+        y: 0.05,
+        isExit: true,
+      },
+    })
+  );
+
+  const createdRooms = await Promise.all(roomPromises);
+  for (const room of createdRooms) {
+    roomByNumber.set(room.number, room.id);
+  }
 
   async function edge(
     aNum: string,
