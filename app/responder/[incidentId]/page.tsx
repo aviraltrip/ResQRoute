@@ -42,7 +42,7 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
   const originRoom = incident.originRoom?.number || originFallbackRoom.number;
   const originFloor = incident.originRoom?.floor || originFallbackRoom.floor;
   
-  const [allGuests, distress, floorRooms] = await Promise.all([
+  const [allGuests, distress] = await Promise.all([
     safeDbQuery(
       () =>
         prisma.guest.findMany({
@@ -58,13 +58,6 @@ export default async function ResponderView({ params }: { params: Promise<{ inci
           orderBy: { createdAt: "desc" },
         }),
       FALLBACK_MESSAGES
-    ),
-    safeDbQuery(
-      () =>
-        prisma.room.findMany({
-          where: { floor: originFloor },
-        }),
-      FALLBACK_ROOMS.filter((r) => r.floor === originFloor)
     ),
   ]);
 
