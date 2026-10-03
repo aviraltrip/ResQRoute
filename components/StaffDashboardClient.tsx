@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -73,7 +73,7 @@ export default function StaffDashboardClient({
   const [messages, setMessages] = useState<DistressMessage[]>(initialMessages || []);
   const [loadingAction, setLoadingAction] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState("");
-  const safeRooms = rooms || [];
+  const safeRooms = useMemo(() => rooms || [], [rooms]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
