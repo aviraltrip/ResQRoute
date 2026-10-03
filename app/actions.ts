@@ -248,7 +248,10 @@ export async function triggerDistress(guestToken: string, text: string) {
 
 export async function triggerAlarm(originRoomId: string, type: IncidentType) {
   const cleanRoomId = originRoomId?.trim();
-  if (!cleanRoomId || !type) throw new Error("Room ID and incident type are required");
+  const validTypes = Object.values(IncidentType);
+  if (!cleanRoomId || !type || !validTypes.includes(type)) {
+    throw new Error("Invalid incident parameters or unverified origin room");
+  }
 
   let incident: { id: string; hotelId: string; type: IncidentType; originRoomId: string; startedAt: Date; endedAt: Date | null; isDrill: boolean } = FALLBACK_INCIDENT;
 
