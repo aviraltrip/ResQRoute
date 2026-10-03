@@ -413,10 +413,10 @@ export async function removeGuest(guestId: string) {
 
 export async function submitVoiceDistress(guestToken: string, formData: FormData) {
   const cleanToken = guestToken?.trim();
-  if (!cleanToken) throw new Error("Guest token is required");
-
   const file = formData.get("audio") as File | null;
-  if (!file) throw new Error("No audio provided");
+  if (!cleanToken || cleanToken.length < 4 || !file) {
+    throw new Error("Invalid voice distress submission payload");
+  }
 
   const [guest, audioBuffer] = await Promise.all([
     safeDbQuery(
@@ -549,7 +549,9 @@ export async function submitVoiceDistress(guestToken: string, formData: FormData
 export async function submitTextDistress(guestToken: string, text: string) {
   const cleanToken = guestToken?.trim();
   const trimmed = text?.trim();
-  if (!cleanToken || !trimmed) throw new Error("Token and message are required");
+  if (!cleanToken || cleanToken.length < 4 || !trimmed) {
+    throw new Error("Invalid distress signal payload or unauthenticated token");
+  }
 
   const guest = await safeDbQuery(
     () =>
