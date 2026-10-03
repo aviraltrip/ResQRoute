@@ -16,6 +16,7 @@ import {
   WifiOff,
   Wifi,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { Guest, DistressMessage, Room, IncidentType } from "@prisma/client";
 import PreRegisterDialog from "@/components/PreRegisterDialog";
@@ -69,6 +70,7 @@ export default function StaffDashboardClient({
   rooms?: Room[];
   isFallback?: boolean;
 }) {
+  const router = useRouter();
   const [guests, setGuests] = useState<GuestWithRoom[]>(initialGuests || []);
   const [messages, setMessages] = useState<DistressMessage[]>(initialMessages || []);
   const [loadingAction, setLoadingAction] = useState(false);
@@ -232,7 +234,7 @@ export default function StaffDashboardClient({
                 } catch (err) {
                   console.warn("Alarm action completed locally:", err);
                 }
-                window.location.href = `/helpline?roomId=${selectedRoom}`;
+                router.push(`/helpline?roomId=${selectedRoom}`);
               }}
               className="bg-red-600 hover:bg-red-700 text-white rounded-none border-0 shadow-inner h-full"
             >
@@ -387,7 +389,7 @@ export default function StaffDashboardClient({
                   type="button"
                   key={msg.id}
                   onClick={() =>
-                    (window.location.href = `/helpline?roomId=${msg.roomId}`)
+                    router.push(`/helpline?roomId=${msg.roomId}`)
                   }
                   className="w-full text-left p-4 rounded-xl border animate-in slide-in-from-right fade-in bg-red-50 border-red-100 shadow-sm transition-all hover:shadow-md cursor-pointer group focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
