@@ -38,7 +38,7 @@ export default function ConfirmCheckInForm({
           defaultValue={defaultPhone}
           className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3.5 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
         />
-        <p className="text-[11px] text-zinc-500 mt-2">We'll only contact this number during a verified emergency.</p>
+        <p className="text-[11px] text-zinc-500 mt-2">We&apos;ll only contact this number during a verified emergency.</p>
       </div>
 
       <div className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-100 rounded-xl cursor-pointer hover:bg-orange-100/50 transition-colors">
