@@ -16,6 +16,16 @@ import {
 const GUEST_COOKIE = "resq_guest_token";
 const GUEST_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
+function logDeferredWarn(message: string, err: unknown) {
+  try {
+    after(() => {
+      console.warn(message, err);
+    });
+  } catch {
+    console.warn(message, err);
+  }
+}
+
 export async function checkInGuest(formData: FormData) {
   const name = (formData.get("name") as string | null)?.trim();
   const phone = (formData.get("phone") as string | null)?.trim();
@@ -51,7 +61,7 @@ export async function checkInGuest(formData: FormData) {
     }
     guestToken = guest.token;
   } catch (err) {
-    console.warn("DB check-in failed, using fallback guest session:", err);
+    logDeferredWarn("DB check-in failed, using fallback guest session:", err);
   }
 
   const cookieStore = await cookies();
@@ -107,7 +117,7 @@ export async function preRegisterGuest(formData: FormData) {
       roomNumber: guest.room.number,
     };
   } catch (err) {
-    console.warn("preRegisterGuest database offline, using fallback token:", err);
+    logDeferredWarn("preRegisterGuest database offline, using fallback token:", err);
     const room = FALLBACK_ROOMS.find((r) => r.id === roomId);
     try {
       revalidatePath("/staff");
@@ -156,7 +166,7 @@ export async function confirmGuestCheckIn(setupToken: string, formData: FormData
       maxAge: GUEST_COOKIE_MAX_AGE,
     });
   } catch (err) {
-    console.warn("confirmGuestCheckIn fallback:", err);
+    logDeferredWarn("confirmGuestCheckIn fallback:", err);
     const cookieStore = await cookies();
     cookieStore.set(GUEST_COOKIE, guestToken, {
       httpOnly: true,
@@ -226,7 +236,7 @@ export async function triggerDistress(guestToken: string, text: string) {
     } catch {}
     return message;
   } catch (err) {
-    console.warn("triggerDistress fallback:", err);
+    logDeferredWarn("triggerDistress fallback:", err);
     return {
       id: `mock-msg-${Date.now()}`,
       text: cleanText,
@@ -269,7 +279,7 @@ export async function triggerAlarm(originRoomId: string, type: IncidentType) {
       }
     }
   } catch (err) {
-    console.warn("triggerAlarm DB call failed, using local alarm:", err);
+    logDeferredWarn("triggerAlarm DB call failed, using local alarm:", err);
   }
 
   after(async () => {
@@ -369,7 +379,7 @@ export async function markGuestSafe(guestToken: string) {
     } catch {}
     return guest;
   } catch (err) {
-    console.warn("markGuestSafe DB fallback:", err);
+    logDeferredWarn("markGuestSafe DB fallback:", err);
     try {
       revalidatePath("/staff");
     } catch {}
@@ -385,7 +395,7 @@ export async function removeGuest(guestId: string) {
     await prisma.distressMessage.deleteMany({ where: { guestId: cleanId } });
     await prisma.guest.delete({ where: { id: cleanId } });
   } catch (err) {
-    console.warn("removeGuest DB fallback:", err);
+    logDeferredWarn("removeGuest DB fallback:", err);
   }
 
   try {
@@ -515,7 +525,7 @@ export async function submitVoiceDistress(guestToken: string, formData: FormData
       }),
     ]);
   } catch (err) {
-    console.warn("Voice distress DB record fallback:", err);
+    logDeferredWarn("Voice distress DB record fallback:", err);
   }
 
   try {
@@ -580,7 +590,7 @@ export async function submitTextDistress(guestToken: string, text: string) {
       }),
     ]);
   } catch (err) {
-    console.warn("Text distress DB record fallback:", err);
+    logDeferredWarn("Text distress DB record fallback:", err);
   }
 
   try {
