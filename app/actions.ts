@@ -87,8 +87,8 @@ export async function preRegisterGuest(formData: FormData) {
   const roomId = (formData.get("roomId") as string | null)?.trim();
   const accessibility = formData.get("accessibility") === "on";
 
-  if (!name || !phone || !roomId) {
-    throw new Error("Missing required fields");
+  if (!name || name.length < 2 || !phone || phone.length < 5 || !roomId) {
+    throw new Error("Missing or invalid required registration fields");
   }
 
   const { randomBytes } = await import("crypto");
@@ -132,11 +132,11 @@ export async function preRegisterGuest(formData: FormData) {
 
 export async function confirmGuestCheckIn(setupToken: string, formData: FormData) {
   const cleanSetupToken = setupToken?.trim();
-  if (!cleanSetupToken) throw new Error("Invalid setup token");
+  if (!cleanSetupToken || cleanSetupToken.length < 8) throw new Error("Invalid or expired setup token");
 
   const phone = (formData.get("phone") as string | null)?.trim();
   const accessibility = formData.get("accessibility") === "on";
-  if (!phone) throw new Error("Phone is required");
+  if (!phone || phone.length < 5) throw new Error("A valid phone number is required");
 
   let guestToken = `confirmed-${cleanSetupToken.slice(0, 8)}`;
 
