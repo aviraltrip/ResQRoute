@@ -72,35 +72,40 @@ async function main() {
     roomByNumber.set(room.number, room.id);
   }
 
-  async function edge(
+  const edgePromises = [];
+  function addEdge(
     aNum: string,
     bNum: string,
-    opts: { isExit?: boolean; weight?: number } = {},
+    opts: { isExit?: boolean; weight?: number } = {}
   ) {
     const a = roomByNumber.get(aNum)!;
     const b = roomByNumber.get(bNum)!;
     const weight = opts.weight ?? 1;
-    await prisma.edge.create({
-      data: { fromRoomId: a, toRoomId: b, isExit: !!opts.isExit, weight },
-    });
-    await prisma.edge.create({
-      data: { fromRoomId: b, toRoomId: a, isExit: !!opts.isExit, weight },
-    });
+    edgePromises.push(
+      prisma.edge.create({
+        data: { fromRoomId: a, toRoomId: b, isExit: !!opts.isExit, weight },
+      }),
+      prisma.edge.create({
+        data: { fromRoomId: b, toRoomId: a, isExit: !!opts.isExit, weight },
+      })
+    );
   }
 
   for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
     for (let i = 1; i < ROOMS_PER_FLOOR; i++) {
-      await edge(`${floor}0${i}`, `${floor}0${i + 1}`);
+      addEdge(`${floor}0${i}`, `${floor}0${i + 1}`);
     }
   }
 
   for (let floor = 1; floor < FLOOR_COUNT; floor++) {
-    await edge(`${floor}01`, `${floor + 1}01`, { weight: STAIR_WEIGHT });
-    await edge(`${floor}05`, `${floor + 1}05`, { weight: STAIR_WEIGHT });
+    addEdge(`${floor}01`, `${floor + 1}01`, { weight: STAIR_WEIGHT });
+    addEdge(`${floor}05`, `${floor + 1}05`, { weight: STAIR_WEIGHT });
   }
 
-  await edge("101", "LOBBY", { isExit: true });
-  await edge("105", "REAR-EXIT", { isExit: true });
+  addEdge("101", "LOBBY", { isExit: true });
+  addEdge("105", "REAR-EXIT", { isExit: true });
+
+  await Promise.all(edgePromises);
 
   const guests = [
     { name: "Alice Chen", phone: "+15555550101", roomNumber: "203", accessibilityFlag: false },
