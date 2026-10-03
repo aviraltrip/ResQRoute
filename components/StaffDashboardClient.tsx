@@ -48,7 +48,9 @@ export default function StaffDashboardClient({
   const [selectedRoom, setSelectedRoom] = useState("");
   const safeRooms = useMemo(() => rooms || [], [rooms]);
   const roomsRef = useRef(safeRooms);
-  roomsRef.current = safeRooms;
+  useEffect(() => {
+    roomsRef.current = safeRooms;
+  }, [safeRooms]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
