@@ -54,10 +54,14 @@ const STAT_CARD_COLOR_MAP: Record<
   },
 };
 
+const EMPTY_GUESTS: GuestWithRoom[] = [];
+const EMPTY_MESSAGES: DistressMessage[] = [];
+const EMPTY_ROOMS: Room[] = [];
+
 export default function StaffDashboardClient({
-  initialGuests = [],
-  initialMessages = [],
-  rooms = [],
+  initialGuests = EMPTY_GUESTS,
+  initialMessages = EMPTY_MESSAGES,
+  rooms = EMPTY_ROOMS,
   isFallback = false,
 }: {
   initialGuests?: GuestWithRoom[];
