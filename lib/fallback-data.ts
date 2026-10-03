@@ -1,4 +1,4 @@
-import type { Guest, DistressMessage, Room, Hotel, Incident, Edge } from "@prisma/client";
+import type { Guest, DistressMessage, Room, Hotel, Incident } from "@prisma/client";
 
 export const FALLBACK_HOTEL: Hotel = {
   id: "hotel-demo-1",
