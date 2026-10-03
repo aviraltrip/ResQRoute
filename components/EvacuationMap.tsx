@@ -2,10 +2,12 @@
 
 import React, { useMemo, useState, useSyncExternalStore } from 'react';
 import { RouteStep } from '@/lib/routing';
+import { Room } from '@prisma/client';
 import { Footprints, MousePointerClick, Flame } from 'lucide-react';
 
 interface EvacuationMapProps {
   route?: RouteStep[];
+  floorRooms?: Room[];
   currentFloor?: number;
 }
 
@@ -228,7 +230,7 @@ function findShortestPath(startId: string, exitIds: string[]) {
   return { path, exitId: bestExit, distance: minExitDist };
 }
 
-export default function EvacuationMap({ route }: EvacuationMapProps) {
+export default function EvacuationMap({ route, currentFloor = 3 }: EvacuationMapProps) {
   const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   
   const defaultStart = route && route[0] ? route[0].roomNumber.match(/\d{2}$/) ? `3${route[0].roomNumber.match(/\d{2}$/)![0]}` : '312' : '312';

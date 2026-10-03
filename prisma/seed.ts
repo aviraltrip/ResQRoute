@@ -25,7 +25,7 @@ async function main() {
   });
 
   const roomByNumber = new Map<string, string>();
-  const roomPromises = [];
+  const roomPromises: Promise<{ id: string; number: string }>[] = [];
 
   for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
     for (let i = 0; i < ROOMS_PER_FLOOR; i++) {
@@ -72,7 +72,7 @@ async function main() {
     roomByNumber.set(room.number, room.id);
   }
 
-  const edgePromises = [];
+  const edgePromises: Promise<unknown>[] = [];
   function addEdge(
     aNum: string,
     bNum: string,
