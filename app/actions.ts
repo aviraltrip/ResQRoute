@@ -457,8 +457,9 @@ export async function submitVoiceDistress(guestToken: string, formData: FormData
   const transcriptId = createJson.id;
 
   let transcript = "";
-  for (let i = 0; i < 60; i++) {
-    await new Promise((r) => setTimeout(r, 2000));
+  const maxAttempts = 30;
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise((r) => setTimeout(r, i === 0 ? 800 : 1200));
     const pollRes = await fetch(
       `https://api.assemblyai.com/v2/transcript/${transcriptId}`,
       {
