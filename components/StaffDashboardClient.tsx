@@ -144,7 +144,6 @@ export default function StaffDashboardClient({
 
   return (
     <div className="min-h-screen bg-slate-50/70 text-zinc-900 flex flex-col font-sans antialiased overflow-hidden">
-      {/* Top Header */}
       <header className="bg-white/95 backdrop-blur-md border-b border-zinc-200/80 px-6 py-3.5 flex justify-between items-center z-20 shadow-2xs">
         <div className="flex items-center gap-3.5">
           <div className="relative flex items-center justify-center">
@@ -221,11 +220,8 @@ export default function StaffDashboardClient({
         </div>
       </header>
 
-      {/* Main Workspace Grid (8 cols left, 4 cols right) */}
       <main className="flex-1 p-6 grid grid-cols-12 gap-6 z-10 h-[calc(100vh-69px)] overflow-hidden">
-        {/* Left Column (8 cols): StatCards + Live Realtime Roster */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-6 h-full overflow-hidden">
-          {/* Top 4 Stat Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 shrink-0">
             <StatCard
               icon={<CheckCircle2 className="w-5 h-5" />}
@@ -253,7 +249,6 @@ export default function StaffDashboardClient({
             />
           </div>
 
-          {/* Live Realtime Roster Card */}
           <div className="bg-white border border-zinc-200/90 rounded-2xl flex-1 flex flex-col overflow-hidden shadow-2xs">
             <div className="px-6 py-3.5 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/60">
               <div className="flex items-center gap-2.5">
@@ -309,7 +304,6 @@ export default function StaffDashboardClient({
                         key={guest.id}
                         className="relative bg-white border border-zinc-200/90 rounded-xl p-4 flex flex-col items-center justify-between text-center shadow-2xs hover:shadow-md hover:border-zinc-300 transition-all duration-200 group"
                       >
-                        {/* Remove button */}
                         <button
                           type="button"
                           title="Check out / remove from roster"
@@ -330,12 +324,10 @@ export default function StaffDashboardClient({
                         </button>
 
                         <div className="w-full flex flex-col items-center">
-                          {/* Avatar icon */}
                           <div className={`w-11 h-11 rounded-full border ${avatarBg} flex items-center justify-center mb-2.5 transition-transform group-hover:scale-105 shadow-2xs`}>
                             <User className="w-5 h-5" />
                           </div>
 
-                          {/* Guest Name & Room */}
                           <p className="text-sm font-bold text-zinc-900 tracking-tight leading-snug">
                             {guest.name}
                           </p>
@@ -343,14 +335,12 @@ export default function StaffDashboardClient({
                             Room {guest.room?.number || "Unknown"}
                           </p>
 
-                          {/* Accessibility flag pill */}
                           {guest.accessibilityFlag && (
                             <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/90 px-1.5 py-0.5 rounded-md mb-2">
                               ♿ Mobility Aid
                             </span>
                           )}
 
-                          {/* Status Badge */}
                           <Badge
                             variant="outline"
                             className={`border text-[11px] px-2.5 py-0.5 ${statusBadgeClass}`}
@@ -359,7 +349,6 @@ export default function StaffDashboardClient({
                           </Badge>
                         </div>
 
-                        {/* Action section (Uniform height across cards) */}
                         <div className="w-full mt-3.5">
                           {!isSafe ? (
                             <Button
@@ -400,7 +389,6 @@ export default function StaffDashboardClient({
           </div>
         </div>
 
-        {/* Right Column (4 cols): Live Triage Alerts */}
         <div className="col-span-12 lg:col-span-4 h-full flex flex-col overflow-hidden">
           <div className="bg-white border border-zinc-200/90 rounded-2xl flex-1 flex flex-col overflow-hidden shadow-2xs">
             <div className="px-5 py-3.5 border-b border-zinc-100 bg-zinc-50/60 flex items-center justify-between">
@@ -446,7 +434,6 @@ export default function StaffDashboardClient({
                         </Badge>
                       </div>
 
-                      {/* AI Distress Voice Quote */}
                       <p className="text-zinc-900 font-bold text-sm leading-snug my-2.5">
                         &ldquo;{msg.summary || msg.text}&rdquo;
                       </p>

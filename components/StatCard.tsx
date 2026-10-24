@@ -64,7 +64,6 @@ export default function StatCard({
     <div
       className={`relative bg-white border ${theme.border} rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden group`}
     >
-      {/* Top micro accent bar */}
       <div className={`absolute top-0 left-0 right-0 h-[2.5px] ${theme.accent}`} />
 
       <div className="flex justify-between items-start mb-3">
