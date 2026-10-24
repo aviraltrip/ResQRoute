@@ -105,14 +105,13 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
           />
         }
       >
-        <UserPlus className="w-3.5 h-3.5 text-blue-600" />
+        <UserPlus className="w-3.5 h-3.5 text-zinc-500" />
         Pre-register Guest
       </DialogTrigger>
 
       <DialogContent className="max-w-md p-0 bg-white border border-zinc-200/90 rounded-2xl shadow-xl overflow-hidden text-zinc-900">
         <div className="px-6 pt-6 pb-4 border-b border-zinc-100 bg-zinc-50/50">
-          <DialogTitle className="text-base font-bold text-zinc-900 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-600" />
+          <DialogTitle className="text-base font-bold text-zinc-900">
             {issued ? "Pass Generated" : "Pre-register Guest"}
           </DialogTitle>
           <DialogDescription className="text-xs text-zinc-500 mt-1">
