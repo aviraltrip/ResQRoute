@@ -6,6 +6,8 @@ import {
   FALLBACK_GUESTS,
   FALLBACK_MESSAGES,
   FALLBACK_ROOMS,
+  FALLBACK_INCIDENT,
+  type FallbackIncidentWithRoom,
 } from "@/lib/fallback-data";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +21,7 @@ export const metadata: Metadata = {
 export default async function StaffDashboard() {
   let isFallback = false;
 
-  const [rooms, guests, messages] = await Promise.all([
+  const [rooms, guests, messages, incident] = await Promise.all([
     safeDbQuery(
       async () => {
         const res = await prisma.room.findMany({
@@ -51,12 +53,24 @@ export default async function StaffDashboard() {
       FALLBACK_MESSAGES,
       4000
     ),
+    safeDbQuery<FallbackIncidentWithRoom>(
+      async () => {
+        const res = await prisma.incident.findFirst({
+          orderBy: { startedAt: "desc" },
+          include: { originRoom: true },
+        });
+        return (res as unknown as FallbackIncidentWithRoom) || FALLBACK_INCIDENT;
+      },
+      FALLBACK_INCIDENT,
+      4000
+    ),
   ]);
 
   if (
     rooms === FALLBACK_ROOMS ||
     guests === FALLBACK_GUESTS ||
-    messages === FALLBACK_MESSAGES
+    messages === FALLBACK_MESSAGES ||
+    incident === FALLBACK_INCIDENT
   ) {
     isFallback = true;
   }
@@ -66,6 +80,7 @@ export default async function StaffDashboard() {
       initialGuests={guests || []}
       initialMessages={messages || []}
       rooms={rooms || []}
+      initialIncident={incident || FALLBACK_INCIDENT}
       isFallback={isFallback}
     />
   );
