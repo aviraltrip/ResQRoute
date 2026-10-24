@@ -157,19 +157,14 @@ export default function StaffDashboardClient({
               <h1 className="text-lg font-bold tracking-tight text-zinc-900 font-sans flex items-center gap-1.5">
                 ResQRoute <span className="font-light text-zinc-400">|</span> <span className="text-zinc-600 font-medium">Command</span>
               </h1>
-              {isFallback ? (
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/80 px-2 py-0.5 rounded-md">
-                  <WifiOff className="w-3 h-3 text-amber-600" /> Standalone Simulation
-                </span>
-              ) : (
+              {!isFallback && (
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2 py-0.5 rounded-md">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   <Wifi className="w-3 h-3 text-emerald-600" /> Live DB Connected
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-red-600 font-semibold font-mono tracking-widest uppercase mt-0.5 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping" />
+            <p className="text-[11px] text-red-600 font-semibold font-mono tracking-widest uppercase mt-0.5">
               Active Incident • Grand Harbor
             </p>
           </div>
