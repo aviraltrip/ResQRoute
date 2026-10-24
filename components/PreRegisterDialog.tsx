@@ -101,24 +101,24 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
           <Button
             type="button"
             variant="outline"
-            className="border-zinc-700/80 bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 hover:text-white shadow-sm font-mono text-xs tracking-wider uppercase h-9 px-3 flex items-center gap-1.5 transition-all"
+            className="border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 hover:text-zinc-900 shadow-2xs font-medium text-xs h-9 px-3.5 flex items-center gap-2 rounded-lg transition-all"
           />
         }
       >
-        <UserPlus className="w-3.5 h-3.5 text-sky-400" />
+        <UserPlus className="w-3.5 h-3.5 text-blue-600" />
         Pre-register Guest
       </DialogTrigger>
 
-      <DialogContent className="max-w-md p-0 bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden text-zinc-100">
-        <div className="px-6 pt-6 pb-4 border-b border-zinc-800/80 bg-zinc-900/40">
-          <DialogTitle className="text-lg font-bold font-mono tracking-tight text-zinc-100 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
-            {issued ? "Check-In Pass Generated" : "Pre-register Emergency Guest"}
+      <DialogContent className="max-w-md p-0 bg-white border border-zinc-200/90 rounded-2xl shadow-xl overflow-hidden text-zinc-900">
+        <div className="px-6 pt-6 pb-4 border-b border-zinc-100 bg-zinc-50/50">
+          <DialogTitle className="text-base font-bold text-zinc-900 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-600" />
+            {issued ? "Pass Generated" : "Pre-register Guest"}
           </DialogTitle>
-          <DialogDescription className="text-xs text-zinc-400 mt-1 font-mono">
+          <DialogDescription className="text-xs text-zinc-500 mt-1">
             {issued
-              ? "Scan the QR code or transmit the unique check-in link to the guest."
-              : "Pre-allocate room credentials and issue an automated check-in token."}
+              ? "Share the QR code or link with the guest to complete self-service intake."
+              : "Pre-allocate a guest room and generate a one-time setup pass."}
           </DialogDescription>
         </div>
 
@@ -127,7 +127,7 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
             <div>
               <label
                 htmlFor="prereg-name"
-                className="block text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest mb-1.5"
+                className="block text-[11px] font-bold text-zinc-600 uppercase tracking-wider mb-1.5"
               >
                 Guest Full Name
               </label>
@@ -136,17 +136,17 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
                 type="text"
                 name="name"
                 required
-                placeholder="e.g. Elena Rostova"
-                className="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 font-sans transition-all"
+                placeholder="e.g. Jane Doe"
+                className="w-full bg-zinc-50/80 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
               />
             </div>
 
             <div>
               <label
                 htmlFor="prereg-phone"
-                className="block text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest mb-1.5"
+                className="block text-[11px] font-bold text-zinc-600 uppercase tracking-wider mb-1.5"
               >
-                Mobile Phone (Emergency SMS)
+                Mobile Phone
               </label>
               <input
                 id="prereg-phone"
@@ -154,14 +154,14 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
                 name="phone"
                 required
                 placeholder="+1 555 019 2831"
-                className="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 font-mono transition-all"
+                className="w-full bg-zinc-50/80 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
               />
             </div>
 
             <div>
               <label
                 htmlFor="prereg-room"
-                className="block text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest mb-1.5"
+                className="block text-[11px] font-bold text-zinc-600 uppercase tracking-wider mb-1.5"
               >
                 Assign Room Number
               </label>
@@ -170,13 +170,13 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
                 name="roomId"
                 required
                 defaultValue=""
-                className="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 font-mono transition-all cursor-pointer"
+                className="w-full bg-zinc-50/80 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
               >
-                <option value="" disabled className="bg-zinc-900 text-zinc-500">
+                <option value="" disabled>
                   Select available room
                 </option>
                 {guestRooms.map((r) => (
-                  <option key={r.id} value={r.id} className="bg-zinc-900 text-zinc-100">
+                  <option key={r.id} value={r.id}>
                     Room {r.number} (Floor {r.floor})
                   </option>
                 ))}
@@ -185,46 +185,46 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
 
             <label
               htmlFor="prereg-accessibility"
-              className="flex items-center gap-3 p-3 bg-amber-950/20 border border-amber-500/30 rounded-xl cursor-pointer transition-colors hover:bg-amber-950/30"
+              className="flex items-center gap-3 p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl cursor-pointer hover:bg-amber-50 transition-colors"
             >
               <input
                 id="prereg-accessibility"
                 type="checkbox"
                 name="accessibility"
-                className="w-4 h-4 rounded border-amber-500/50 text-amber-500 focus:ring-amber-500 cursor-pointer bg-zinc-900"
+                className="w-4 h-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
               />
-              <span className="text-xs text-amber-300 font-mono">
+              <span className="text-xs text-amber-900 font-medium">
                 Guest requires mobility / wheelchair evacuation support
               </span>
             </label>
 
             {error && (
-              <p className="text-xs text-red-400 font-mono bg-red-950/30 border border-red-500/30 p-2.5 rounded-lg">{error}</p>
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 p-2.5 rounded-lg font-medium">{error}</p>
             )}
 
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-sky-600 hover:bg-sky-500 text-white font-mono font-semibold text-xs tracking-wider uppercase h-10 rounded-xl shadow-lg shadow-sky-950/50 mt-2"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs tracking-wide h-10 rounded-xl shadow-xs mt-2"
             >
               {loading ? "Generating Credentials..." : "Generate Check-in Pass"}
             </Button>
           </form>
         ) : (
           <div className="p-6 space-y-4">
-            <div className="bg-emerald-950/30 border border-emerald-500/40 rounded-xl p-3 flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
               <div>
-                <p className="text-xs font-mono font-bold text-emerald-300">
+                <p className="text-xs font-bold text-emerald-900">
                   {issued.guestName} · Room {issued.roomNumber}
                 </p>
-                <p className="text-[11px] text-emerald-400/80 font-mono">
-                  Pending arrival — one-time token valid for live intake.
+                <p className="text-[11px] text-emerald-700">
+                  Pending arrival — token is active for initial check-in.
                 </p>
               </div>
             </div>
 
-            <div className="flex justify-center bg-white p-3.5 rounded-xl border border-zinc-800">
+            <div className="flex justify-center bg-zinc-50 border border-zinc-200 rounded-xl p-4">
               {qrSrc && (
                 <Image
                   src={qrSrc}
@@ -232,7 +232,7 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
                   width={200}
                   height={200}
                   unoptimized
-                  className="rounded-lg"
+                  className="rounded-lg bg-white"
                 />
               )}
             </div>
@@ -240,9 +240,9 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
             <div>
               <label
                 htmlFor="prereg-share-url"
-                className="block text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest mb-1.5"
+                className="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5"
               >
-                Shareable Intake Link
+                Shareable Check-in Link
               </label>
               <div className="flex gap-2">
                 <input
@@ -250,12 +250,12 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
                   readOnly
                   value={issued.url}
                   onFocus={(e) => e.currentTarget.select()}
-                  className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-300 font-mono focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs text-zinc-800 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <Button
                   type="button"
                   onClick={copyLink}
-                  className="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 h-auto"
+                  className="bg-zinc-900 hover:bg-zinc-800 text-white px-3 h-auto"
                 >
                   {copied ? (
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -270,18 +270,18 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1 border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-mono text-xs uppercase"
+                className="flex-1 border-zinc-200 text-zinc-700 hover:bg-zinc-50 text-xs"
                 onClick={reset}
               >
                 <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-                New Pass
+                Issue Another
               </Button>
               <Button
                 type="button"
-                className="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-mono text-xs uppercase"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs"
                 onClick={() => setState((prev) => ({ ...prev, open: false }))}
               >
-                Close
+                Done
               </Button>
             </div>
           </div>
@@ -290,4 +290,3 @@ export default function PreRegisterDialog({ rooms }: { rooms: Room[] }) {
     </Dialog>
   );
 }
-
