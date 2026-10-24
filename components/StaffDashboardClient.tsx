@@ -16,15 +16,15 @@ import {
   WifiOff,
   Wifi,
   Check,
-  Phone,
-  Flame,
   Radio,
+  ExternalLink,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { Guest, DistressMessage, Room, IncidentType } from "@prisma/client";
 import PreRegisterDialog from "@/components/PreRegisterDialog";
 import StatCard from "@/components/StatCard";
+import { type FallbackIncidentWithRoom } from "@/lib/fallback-data";
 
 type GuestWithRoom = Guest & {
   room?: Room;
@@ -38,11 +38,13 @@ export default function StaffDashboardClient({
   initialGuests = EMPTY_GUESTS,
   initialMessages = EMPTY_MESSAGES,
   rooms = EMPTY_ROOMS,
+  initialIncident,
   isFallback = false,
 }: {
   initialGuests?: GuestWithRoom[];
   initialMessages?: DistressMessage[];
   rooms?: Room[];
+  initialIncident?: FallbackIncidentWithRoom;
   isFallback?: boolean;
 }) {
   const router = useRouter();
@@ -290,7 +292,7 @@ export default function StaffDashboardClient({
                     let avatarBg = "bg-zinc-100 text-zinc-600 border-zinc-200/80";
 
                     if (isSafe) {
-                      statusBadgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                      statusBadgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold";
                       statusLabel = "Safe";
                       avatarBg = "bg-emerald-50 text-emerald-600 border-emerald-200/80";
                     } else if (isTrapped) {
@@ -298,11 +300,11 @@ export default function StaffDashboardClient({
                       statusLabel = "Unsafe / Danger";
                       avatarBg = "bg-red-50 text-red-600 border-red-200/80";
                     } else if (isEvacuating) {
-                      statusBadgeClass = "bg-blue-50 text-blue-700 border-blue-200";
+                      statusBadgeClass = "bg-blue-50 text-blue-700 border-blue-200 font-semibold";
                       statusLabel = "Evacuating";
                       avatarBg = "bg-blue-50 text-blue-600 border-blue-200/80";
                     } else if (guest.status === "pending_arrival") {
-                      statusBadgeClass = "bg-amber-50 text-amber-700 border-amber-200";
+                      statusBadgeClass = "bg-amber-50 text-amber-700 border-amber-200 font-semibold";
                       statusLabel = "Pending Arrival";
                       avatarBg = "bg-amber-50 text-amber-600 border-amber-200/80";
                     }
@@ -334,7 +336,7 @@ export default function StaffDashboardClient({
 
                         <div className="w-full flex flex-col items-center">
                           {/* Avatar icon */}
-                          <div className={`w-11 h-11 rounded-full border ${avatarBg} flex items-center justify-center mb-2.5 transition-transform group-hover:scale-105`}>
+                          <div className={`w-11 h-11 rounded-full border ${avatarBg} flex items-center justify-center mb-2.5 transition-transform group-hover:scale-105 shadow-2xs`}>
                             <User className="w-5 h-5" />
                           </div>
 
@@ -342,7 +344,7 @@ export default function StaffDashboardClient({
                           <p className="text-sm font-bold text-zinc-900 tracking-tight leading-snug">
                             {guest.name}
                           </p>
-                          <p className="text-xs text-zinc-500 font-medium mt-0.5 mb-2.5">
+                          <p className="text-xs text-zinc-500 font-medium mt-0.5 mb-2">
                             Room {guest.room?.number || "Unknown"}
                           </p>
 
@@ -356,37 +358,44 @@ export default function StaffDashboardClient({
                           {/* Status Badge */}
                           <Badge
                             variant="outline"
-                            className={`border text-[11px] font-semibold px-2 py-0.5 ${statusBadgeClass}`}
+                            className={`border text-[11px] px-2.5 py-0.5 ${statusBadgeClass}`}
                           >
                             {statusLabel}
                           </Badge>
                         </div>
 
-                        {/* Confirm Safe action button */}
-                        {!isSafe && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="mt-3.5 w-full bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border-emerald-200/90 hover:border-emerald-600 text-xs font-semibold h-8 rounded-lg shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                            onClick={async () => {
-                              setGuests((prev) =>
-                                prev.map((g) =>
-                                  g.id === guest.id ? { ...g, status: "safe" } : g
-                                )
-                              );
-                              try {
-                                const { markGuestSafe } = await import("@/app/actions");
-                                await markGuestSafe(guest.token);
-                              } catch (err) {
-                                console.warn("markGuestSafe fallback handled:", err);
-                              }
-                            }}
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                            Confirm Safe
-                          </Button>
-                        )}
+                        {/* Action section (Uniform height across cards) */}
+                        <div className="w-full mt-3.5">
+                          {!isSafe ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="w-full bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border-emerald-200/90 hover:border-emerald-600 text-xs font-semibold h-8 rounded-lg shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                              onClick={async () => {
+                                setGuests((prev) =>
+                                  prev.map((g) =>
+                                    g.id === guest.id ? { ...g, status: "safe" } : g
+                                  )
+                                );
+                                try {
+                                  const { markGuestSafe } = await import("@/app/actions");
+                                  await markGuestSafe(guest.token);
+                                } catch (err) {
+                                  console.warn("markGuestSafe fallback handled:", err);
+                                }
+                              }}
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              Confirm Safe
+                            </Button>
+                          ) : (
+                            <div className="w-full h-8 px-2 bg-emerald-50/50 border border-emerald-100 rounded-lg flex items-center justify-center gap-1.5 text-[11px] font-semibold text-emerald-700">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              Cleared Secure
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -428,7 +437,7 @@ export default function StaffDashboardClient({
                       key={msg.id}
                       className="w-full text-left p-4 rounded-xl border border-zinc-200/90 border-l-4 border-l-red-500 bg-white shadow-2xs hover:shadow-md transition-all group"
                     >
-                      <div className="flex items-start justify-between mb-2.5">
+                      <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <div className="px-2 py-0.5 rounded text-[11px] uppercase font-mono font-bold tracking-wider bg-zinc-100 text-zinc-800 border border-zinc-200">
                             Room {room?.number || "Unknown"}
@@ -442,7 +451,8 @@ export default function StaffDashboardClient({
                         </Badge>
                       </div>
 
-                      <p className="text-zinc-900 font-bold text-sm leading-snug my-2">
+                      {/* AI Distress Voice Quote */}
+                      <p className="text-zinc-900 font-bold text-sm leading-snug my-2.5">
                         &ldquo;{msg.summary || msg.text}&rdquo;
                       </p>
 
@@ -452,7 +462,7 @@ export default function StaffDashboardClient({
                         </p>
                       )}
 
-                      <div className="flex items-center justify-between pt-2 border-t border-zinc-100">
+                      <div className="flex items-center justify-between pt-2.5 border-t border-zinc-100">
                         <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200">
                           {msg.category || "General"}
                         </span>
@@ -462,7 +472,7 @@ export default function StaffDashboardClient({
                             type="button"
                             size="sm"
                             onClick={() => router.push(`/helpline?roomId=${msg.roomId}`)}
-                            className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold h-7 px-2.5 rounded shadow-2xs"
+                            className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold h-7 px-3 rounded-lg shadow-2xs cursor-pointer"
                           >
                             Dispatch
                           </Button>
@@ -484,7 +494,7 @@ export default function StaffDashboardClient({
                                   console.warn("markGuestSafe fallback handled:", err);
                                 }
                               }}
-                              className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-xs font-semibold h-7 px-2.5 rounded shadow-2xs"
+                              className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-xs font-semibold h-7 px-2.5 rounded-lg shadow-2xs cursor-pointer"
                             >
                               Mark Safe
                             </Button>
